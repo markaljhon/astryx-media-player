@@ -146,7 +146,7 @@ function CameraGestureControls({ resetKey }: { resetKey: string }) {
 
   useEffect(() => {
     const DEFAULT_CAMERA_PITCH = 0;
-    const DEFAULT_CAMERA_YAW = MathUtils.degToRad(180);
+    const DEFAULT_CAMERA_YAW = MathUtils.degToRad(270);
     const perspectiveCamera = camera;
 
     if (!(perspectiveCamera instanceof PerspectiveCamera)) {
