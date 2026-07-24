@@ -75,19 +75,19 @@ function applyMonoCrop(texture: VideoTexture, layout: StereoVideoLayout) {
   texture.wrapT = ClampToEdgeWrapping;
 
   if (layout === "side-by-side") {
-    texture.repeat.set(0.5, 1);
-    texture.offset.set(0, 0);
+    texture.repeat.set(-0.5, 1);
+    texture.offset.set(0.5, 0);
     return;
   }
 
   if (layout === "top-bottom") {
-    texture.repeat.set(1, 0.5);
-    texture.offset.set(0, 0.5);
+    texture.repeat.set(-1, 0.5);
+    texture.offset.set(1, 0.5);
     return;
   }
 
-  texture.repeat.set(1, 1);
-  texture.offset.set(0, 0);
+  texture.repeat.set(-1, 1);
+  texture.offset.set(1, 0);
 }
 
 function MonoVideoScreen({
