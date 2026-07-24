@@ -18,9 +18,9 @@ import type { StereoVideoLayout } from "../../media/api/mediaTypes";
 import type { VideoPlayerProps } from "../api/videoPlayerAdapters";
 import { Icon, IconButton } from "@astryxdesign/core";
 
-const DEFAULT_CAMERA_FOV = 80;
+const DEFAULT_CAMERA_FOV = 100;
 const MIN_CAMERA_FOV = 20;
-const MAX_CAMERA_FOV = 130;
+const MAX_CAMERA_FOV = 135;
 const ROTATION_SENSITIVITY = 0.0026;
 const MIN_PITCH = -Math.PI / 2 + 0.01;
 const MAX_PITCH = Math.PI / 2 - 0.01;
@@ -98,7 +98,7 @@ function MonoVideoScreen({
   video: HTMLVideoElement;
 }) {
   const d = MathUtils.degToRad;
-  const cutoutDegrees = 20;
+  const cutoutDegrees = 5;
 
   const texture = useMemo(() => {
     const nextTexture = new VideoTexture(video);
@@ -129,7 +129,7 @@ function MonoVideoScreen({
           d(0), // phiStart
           d(360), // phiLength
           d(0), // thetaStart: cuts off top
-          d(180 - cutoutDegrees), // thetaLength: cuts off bottom too
+          d(180 + cutoutDegrees), // thetaLength: cuts off bottom too
         ]}
       />
       <meshBasicMaterial map={texture} side={BackSide} toneMapped={false} />
@@ -186,6 +186,7 @@ function CameraGestureControls({ resetKey }: { resetKey: string }) {
     function applyFov(nextFov: number) {
       activeCamera.fov = clamp(nextFov, MIN_CAMERA_FOV, MAX_CAMERA_FOV);
       activeCamera.updateProjectionMatrix();
+      console.log("FOV:", activeCamera.fov);
     }
 
     function getPinchPointers() {
