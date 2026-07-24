@@ -82,4 +82,27 @@ npm run build
 npm run lint
 ```
 
+## Stash media provider
+
+The `stash` media provider loads the latest VR-tagged scenes from a Stash
+GraphQL endpoint. For local development, configure Vite to proxy Stash requests
+and inject the API key server-side:
+
+```bash
+STASH_SERVER_URL=http://localhost:9999
+STASH_API_KEY=your-stash-api-key
+VITE_STASH_GRAPHQL_ENDPOINT=/stash/graphql
+```
+
+Use it with `fetchMediaList({ providerId: "stash" })`. Scene durations from
+Stash (seconds) are converted to the app's `durationMs` field. The app defaults
+to `/stash/graphql`, so `VITE_STASH_GRAPHQL_ENDPOINT` is optional unless you want
+to point it somewhere else. Restart the Vite dev server after editing
+`.env.local`.
+
+Do not put the Stash API key in a `VITE_` variable. Vite exposes `VITE_`
+variables to the browser, while `STASH_API_KEY` is only read by the local dev
+server proxy. The Vite proxy can fall back to older `VITE_STASH_*` values during
+migration, but the app no longer reads the API key from client code.
+
 If you want, I can next propose the exact starter folder tree and the first `main.tsx` / `App.tsx` contents before we change code. 

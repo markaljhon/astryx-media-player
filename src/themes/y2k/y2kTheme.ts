@@ -278,8 +278,10 @@ export const y2kTheme = defineTheme({
 
     badge: {
       base: {
-        borderRadius: '9999px',
-        borderWidth: '1.5px',
+        height: 'var(--spacing-3)',
+        paddingInline: 'var(--spacing-1)',
+        borderRadius: 'var(--radius-element)',
+        borderWidth: '0',
         borderStyle: 'solid',
         borderColor: 'color-mix(in srgb, currentColor 30%, transparent)',
       },
