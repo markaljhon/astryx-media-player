@@ -20,10 +20,12 @@ import { Icon, IconButton } from "@astryxdesign/core";
 
 const DEFAULT_CAMERA_FOV = 100;
 const MIN_CAMERA_FOV = 20;
-const MAX_CAMERA_FOV = 135;
+const MAX_CAMERA_FOV = 100;
 const ROTATION_SENSITIVITY = 0.0026;
-const MIN_PITCH = -Math.PI / 2 + 0.01;
-const MAX_PITCH = Math.PI / 2 - 0.01;
+const MIN_PITCH = MathUtils.degToRad(-40);
+const MAX_PITCH = MathUtils.degToRad(40);
+const MIN_YAW = MathUtils.degToRad(140);
+const MAX_YAW = MathUtils.degToRad(218);
 const SPHERE_RADIUS = 500;
 const CANVAS_RESIZE_OPTIONS = { offsetSize: true };
 const SPATIAL_VIEWPORT_HEIGHT_VARIABLE = "--spatial-player-viewport-height";
@@ -176,7 +178,7 @@ function MonoVideoScreen({
   video: HTMLVideoElement;
 }) {
   const d = MathUtils.degToRad;
-  const cutoutDegrees = 5;
+  const cutoutDegrees = 0; // Adjust this value to control the amount of cutout at the bottom of the sphere
 
   const texture = useMemo(() => {
     const nextTexture = new VideoTexture(video);
@@ -202,12 +204,12 @@ function MonoVideoScreen({
       <sphereGeometry
         args={[
           SPHERE_RADIUS,
-          190,
-          190,
-          d(0), // phiStart
-          d(360), // phiLength
-          d(0), // thetaStart: cuts off top
-          d(180 + cutoutDegrees), // thetaLength: cuts off bottom too
+          64,
+          32,
+          d(-5), // phiStart
+          d(190), // phiLength
+          d(cutoutDegrees), // thetaStart: cuts off top
+          d(180 - cutoutDegrees*2), // thetaLength: cuts off bottom too
         ]}
       />
       <meshBasicMaterial map={texture} side={BackSide} toneMapped={false} />
@@ -224,7 +226,7 @@ function CameraGestureControls({ resetKey }: { resetKey: string }) {
 
   useEffect(() => {
     const DEFAULT_CAMERA_PITCH = 0;
-    const DEFAULT_CAMERA_YAW = MathUtils.degToRad(270);
+    const DEFAULT_CAMERA_YAW = MathUtils.degToRad(180);
     const perspectiveCamera = camera;
 
     if (!(perspectiveCamera instanceof PerspectiveCamera)) {
@@ -342,8 +344,12 @@ function CameraGestureControls({ resetKey }: { resetKey: string }) {
       }
 
       const rotation = rotationRef.current;
-      rotation.yaw +=
-        (pointerPosition.x - lastRotationPointer.x) * ROTATION_SENSITIVITY;
+      rotation.yaw = clamp(
+        rotation.yaw +
+          (pointerPosition.x - lastRotationPointer.x) * ROTATION_SENSITIVITY,
+        MIN_YAW,
+        MAX_YAW,
+      );
       rotation.pitch = clamp(
         rotation.pitch +
           (pointerPosition.y - lastRotationPointer.y) * ROTATION_SENSITIVITY,
@@ -351,7 +357,7 @@ function CameraGestureControls({ resetKey }: { resetKey: string }) {
         MAX_PITCH,
       );
 
-      activeCamera.rotation.set(rotation.pitch, rotation.yaw, 0, "YXZ");
+      activeCamera.rotation.set(rotation.pitch, rotation.yaw, 0, "YXZ"); console.log("Pitch:", MathUtils.radToDeg(rotation.pitch), "Yaw:", MathUtils.radToDeg(rotation.yaw));
     }
 
     function handlePointerEnd(event: PointerEvent) {
