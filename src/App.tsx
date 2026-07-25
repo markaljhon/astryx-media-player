@@ -15,7 +15,7 @@ function App() {
       ) : password == TEST_PASSWORD ? (
         <MediaLibraryPage providerId="local" />
       ) : (
-        <Center height="100vh">
+        <Center height="100dvh">
           <VStack gap={4} width="18rem">
             <TextInput
               label="Password"

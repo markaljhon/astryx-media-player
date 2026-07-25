@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
 import { Dialog } from "@astryxdesign/core/Dialog";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
@@ -26,6 +26,51 @@ const MIN_PITCH = -Math.PI / 2 + 0.01;
 const MAX_PITCH = Math.PI / 2 - 0.01;
 const SPHERE_RADIUS = 500;
 const CANVAS_RESIZE_OPTIONS = { offsetSize: true };
+const SPATIAL_VIEWPORT_HEIGHT_VARIABLE = "--spatial-player-viewport-height";
+const SPATIAL_VIEWPORT_HEIGHT = `var(${SPATIAL_VIEWPORT_HEIGHT_VARIABLE}, 100dvh)`;
+
+const fullscreenDialogStyle: CSSProperties = {
+  backgroundColor: "black",
+  height: SPATIAL_VIEWPORT_HEIGHT,
+  maxHeight: SPATIAL_VIEWPORT_HEIGHT,
+  minHeight: SPATIAL_VIEWPORT_HEIGHT,
+  overflow: "hidden",
+  width: "100dvw",
+  maxWidth: "100dvw",
+};
+
+const fullscreenSurfaceStyle: CSSProperties = {
+  backgroundColor: "black",
+  height: "100%",
+  minHeight: 0,
+  overflow: "hidden",
+  position: "relative",
+  width: "100%",
+};
+
+const canvasItemStyle: CSSProperties = {
+  flexBasis: 0,
+  height: "100%",
+};
+
+const closeButtonStyle: CSSProperties = {
+  position: "absolute",
+  top: "calc(env(safe-area-inset-top) + var(--spacing-2))",
+  right: "calc(env(safe-area-inset-right) + var(--spacing-2))",
+  zIndex: 2,
+};
+
+const playbackControlsStyle: CSSProperties = {
+  boxSizing: "border-box",
+  left: 0,
+  padding:
+    "var(--spacing-3) calc(env(safe-area-inset-right) + var(--spacing-3)) calc(env(safe-area-inset-bottom) + var(--spacing-3)) calc(env(safe-area-inset-left) + var(--spacing-3))",
+  position: "absolute",
+  right: 0,
+  bottom: 0,
+  width: "100%",
+  zIndex: 1,
+};
 
 type PointerPosition = {
   x: number;
@@ -36,6 +81,39 @@ type PinchState = {
   distance: number;
   fov: number;
 };
+
+function useSpatialViewportHeight(isOpen: boolean) {
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const root = document.documentElement;
+    const visualViewport = window.visualViewport;
+
+    function updateViewportHeight() {
+      const viewportHeight = visualViewport?.height ?? window.innerHeight;
+      root.style.setProperty(
+        SPATIAL_VIEWPORT_HEIGHT_VARIABLE,
+        `${viewportHeight}px`,
+      );
+    }
+
+    updateViewportHeight();
+    window.addEventListener("resize", updateViewportHeight);
+    window.addEventListener("orientationchange", updateViewportHeight);
+    visualViewport?.addEventListener("resize", updateViewportHeight);
+    visualViewport?.addEventListener("scroll", updateViewportHeight);
+
+    return () => {
+      window.removeEventListener("resize", updateViewportHeight);
+      window.removeEventListener("orientationchange", updateViewportHeight);
+      visualViewport?.removeEventListener("resize", updateViewportHeight);
+      visualViewport?.removeEventListener("scroll", updateViewportHeight);
+      root.style.removeProperty(SPATIAL_VIEWPORT_HEIGHT_VARIABLE);
+    };
+  }, [isOpen]);
+}
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -370,6 +448,7 @@ export function SpatialMonoVideoPlayer({
   const [currentTime, setCurrentTime] = useState(0);
   const [playbackError, setPlaybackError] = useState<string | null>(null);
   const layout = item.stereoLayout ?? "mono";
+  useSpatialViewportHeight(isOpen);
 
   useEffect(() => {
     if (!isOpen || !item.sourceUrl) {
@@ -493,18 +572,22 @@ export function SpatialMonoVideoPlayer({
       variant="fullscreen"
       purpose="info"
       padding={0}
-      style={{ backgroundColor: "black" }}
+      style={fullscreenDialogStyle}
     >
-      <VStack height="100%" gap={0} padding={0}>
-        <VStack gap={3} height="100%" padding={0}>
+      <VStack height="100%" gap={0} padding={0} style={fullscreenSurfaceStyle}>
+        <VStack gap={3} height="100%" padding={0} style={fullscreenSurfaceStyle}>
           <IconButton
             label="Close"
             icon={<Icon icon="close" color="inherit" />}
             variant="secondary"
-            style={{ position: "absolute", top: 8, right: 8, zIndex: 1 }}
+            style={closeButtonStyle}
             onClick={() => onOpenChange(false)}
           />
-          <StackItem size="fill" crossAlignSelf="stretch">
+          <StackItem
+            size="fill"
+            crossAlignSelf="stretch"
+            style={canvasItemStyle}
+          >
             <MonoVideoCanvas layout={layout} video={video} />
           </StackItem>
 
@@ -516,8 +599,8 @@ export function SpatialMonoVideoPlayer({
 
           <VStack
             gap={2}
-            padding={3}
-            style={{ position: "absolute", bottom: 0, width: "100%" }}
+            padding={0}
+            style={playbackControlsStyle}
           >
             <Slider
               label="Playback position"
