@@ -6,10 +6,10 @@ type VideoPlayerAdapterProps = {
   onOpenChange: (isOpen: boolean) => void;
 };
 
-export function VideoPlayerAdapter({
+export const VideoPlayerAdapter = ({
   item,
   onOpenChange,
-}: VideoPlayerAdapterProps) {
+}: VideoPlayerAdapterProps) => {
   if (!item) {
     return null;
   }
@@ -23,4 +23,4 @@ export function VideoPlayerAdapter({
   const Player = adapter.Component;
 
   return <Player item={item} isOpen onOpenChange={onOpenChange} />;
-}
+};

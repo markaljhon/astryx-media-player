@@ -1,4 +1,10 @@
-import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Button } from "@astryxdesign/core/Button";
 import { Dialog } from "@astryxdesign/core/Dialog";
 import { HStack, StackItem, VStack } from "@astryxdesign/core/Stack";
@@ -20,7 +26,7 @@ import { Icon, IconButton } from "@astryxdesign/core";
 
 const DEFAULT_CAMERA_FOV = 100;
 const MIN_CAMERA_FOV = 20;
-const MAX_CAMERA_FOV = 100;
+const MAX_CAMERA_FOV = 160;
 const ROTATION_SENSITIVITY = 0.0026;
 const MIN_PITCH = MathUtils.degToRad(-40);
 const MAX_PITCH = MathUtils.degToRad(40);
@@ -209,7 +215,7 @@ function MonoVideoScreen({
           d(-5), // phiStart
           d(190), // phiLength
           d(cutoutDegrees), // thetaStart: cuts off top
-          d(180 - cutoutDegrees*2), // thetaLength: cuts off bottom too
+          d(180 - cutoutDegrees * 2), // thetaLength: cuts off bottom too
         ]}
       />
       <meshBasicMaterial map={texture} side={BackSide} toneMapped={false} />
@@ -357,7 +363,13 @@ function CameraGestureControls({ resetKey }: { resetKey: string }) {
         MAX_PITCH,
       );
 
-      activeCamera.rotation.set(rotation.pitch, rotation.yaw, 0, "YXZ"); console.log("Pitch:", MathUtils.radToDeg(rotation.pitch), "Yaw:", MathUtils.radToDeg(rotation.yaw));
+      activeCamera.rotation.set(rotation.pitch, rotation.yaw, 0, "YXZ");
+      console.log(
+        "Pitch:",
+        MathUtils.radToDeg(rotation.pitch),
+        "Yaw:",
+        MathUtils.radToDeg(rotation.yaw),
+      );
     }
 
     function handlePointerEnd(event: PointerEvent) {
@@ -581,7 +593,12 @@ export function SpatialMonoVideoPlayer({
       style={fullscreenDialogStyle}
     >
       <VStack height="100%" gap={0} padding={0} style={fullscreenSurfaceStyle}>
-        <VStack gap={3} height="100%" padding={0} style={fullscreenSurfaceStyle}>
+        <VStack
+          gap={3}
+          height="100%"
+          padding={0}
+          style={fullscreenSurfaceStyle}
+        >
           <IconButton
             label="Close"
             icon={<Icon icon="close" color="inherit" />}
@@ -603,11 +620,7 @@ export function SpatialMonoVideoPlayer({
             </Text>
           ) : null}
 
-          <VStack
-            gap={2}
-            padding={0}
-            style={playbackControlsStyle}
-          >
+          <VStack gap={2} padding={0} style={playbackControlsStyle}>
             <Slider
               label="Playback position"
               isLabelHidden

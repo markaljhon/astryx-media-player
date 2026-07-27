@@ -192,7 +192,7 @@ export function MediaGalleryCard({ item, onPlay }: MediaGalleryCardProps) {
           onBlur={deactivatePreview}
           tabIndex={hasPreviewMedia ? 0 : undefined}
         >
-          {canPlay ? (
+          {/* {canPlay ? (
             <Overlay
               showOn="hover"
               align="center"
@@ -206,7 +206,8 @@ export function MediaGalleryCard({ item, onPlay }: MediaGalleryCardProps) {
             </Overlay>
           ) : (
             previewContent
-          )}
+          )} */}
+          {previewContent}
         </AspectRatio>
 
         <VStack gap={1} padding={3}>
