@@ -6,13 +6,38 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+      content="width=device-width, height=device-height, initial-scale=1, shrink-to-fit=no, user-scalable=no, viewport-fit=cover"
     />
+
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Astryx Media Player" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
     <title>Astryx Media Player</title>
+
+    <style>
+      :root {
+        --safe-t: env(safe-area-inset-top);
+        --safe-b: env(safe-area-inset-bottom);
+        --safe-l: env(safe-area-inset-left);
+        --safe-r: env(safe-area-inset-right);
+      }
+
+      html,
+      body {
+        height: 100vh;
+      }
+
+      .safe-area {
+        padding-top: var(--safe-t);
+        padding-bottom: var(--safe-b);
+        padding-left: var(--safe-l);
+        padding-right: var(--safe-r);
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
