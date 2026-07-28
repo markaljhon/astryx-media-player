@@ -185,7 +185,7 @@ export function MediaLibraryPage(props: { providerId?: string }) {
   }
 
   return (
-    <Section variant="transparent" height="100%">
+    <Section variant="transparent" height="100%" className="safe-area">
       <VStack gap={4} height="100%">
         <VStack gap={1}>
           <Heading level={1}>Media Library</Heading>

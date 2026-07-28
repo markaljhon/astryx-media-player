@@ -30,7 +30,7 @@ const Player = createPlayer({
 export const SpatialMonoVideoPlayer = (props: { src: string }) => {
   return (
     <Player.Provider>
-      <MinimalVideoSkin>
+      <MinimalVideoSkin className="spatial-mono-video-player">
         <MonoVideoCanvas url={props.src} />
       </MinimalVideoSkin>
     </Player.Provider>

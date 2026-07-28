@@ -14,16 +14,14 @@ type MonoVideoCanvasProps = {
 export const MonoVideoCanvas = (props: MonoVideoCanvasProps) => {
   return (
     <Canvas
+      className="spatial-mono-video-canvas"
       camera={{
         position: [0, 0, 0],
         near: 1,
         far: 1100,
         fov: DEFAULT_CAMERA_FOV,
       }}
-      style={{
-        touchAction: "none",
-        userSelect: "none",
-      }}
+      resize={{ offsetSize: true }}
     >
       <CameraGestureControls resetKey={props.url} />
       <MonoVideoScene>
