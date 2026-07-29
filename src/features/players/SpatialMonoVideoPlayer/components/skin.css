@@ -16,7 +16,10 @@
   min-height: 0;
   min-width: 0;
   position: absolute;
+  overflow: hidden;
   width: 100%;
+  border-style: none;
+  border-radius: var(--radius-none);
 }
 
 .spatial-mono-video-player.media-minimal-skin--video .media-controls {
@@ -64,4 +67,22 @@
 .spatial-mono-video-canvas {
   width: 100%;
   height: 100%;
+}
+
+.spatial-mono-video-player.media-minimal-skin > .media-poster {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 200%;
+  height: 100%;
+  max-width: none;
+  pointer-events: none;
+  clip-path: inset(0 50% 0 0);
+  object-fit: fill;
+  object-position: left center;
+  transition: opacity 0.25s;
+}
+
+.spatial-mono-video-player.media-minimal-skin
+  > .media-poster:not([data-visible]) {
+  opacity: 0;
 }

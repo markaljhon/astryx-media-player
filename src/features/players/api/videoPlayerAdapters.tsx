@@ -1,6 +1,12 @@
 import type { ComponentType, CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import { Dialog, Icon, IconButton, StackItem, VStack } from "@astryxdesign/core";
+import {
+  Dialog,
+  Icon,
+  IconButton,
+  StackItem,
+  VStack,
+} from "@astryxdesign/core";
 import type { MediaItem } from "@/types/media";
 import { FlatLightboxVideoPlayer } from "../components/FlatLightboxVideoPlayer";
 import { SpatialMonoVideoPlayer } from "../SpatialMonoVideoPlayer";
@@ -76,10 +82,14 @@ function SpatialMonoVideoPlayerAdapter({
       purpose="info"
       padding={0}
     >
-      <VStack height="100%" gap={0} padding={0} style={spatialDialogSurfaceStyle}>
+      <VStack
+        height="100%"
+        gap={0}
+        padding={0}
+        style={spatialDialogSurfaceStyle}
+      >
         <IconButton
           label="Close spatial video"
-          tooltip="Close"
           icon={<Icon icon="close" color="inherit" />}
           variant="secondary"
           style={spatialDialogCloseButtonStyle}
@@ -90,7 +100,12 @@ function SpatialMonoVideoPlayerAdapter({
           crossAlignSelf="stretch"
           style={spatialDialogPlayerStyle}
         >
-          {isOpen ? <SpatialMonoVideoPlayer src={item.sourceUrl} /> : null}
+          {isOpen ?
+            <SpatialMonoVideoPlayer
+              src={item.sourceUrl}
+              previewSrc={item.thumbnailUrl}
+            />
+          : null}
         </StackItem>
       </VStack>
     </Dialog>,

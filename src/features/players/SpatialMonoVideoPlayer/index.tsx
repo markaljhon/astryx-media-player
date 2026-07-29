@@ -6,6 +6,7 @@ import {
   createPlayer,
   errorFeature,
   playbackFeature,
+  Poster,
   sourceFeature,
   timeFeature,
   volumeFeature,
@@ -27,11 +28,15 @@ const Player = createPlayer({
   ],
 });
 
-export const SpatialMonoVideoPlayer = (props: { src: string }) => {
+export const SpatialMonoVideoPlayer = (props: {
+  src: string;
+  previewSrc?: string;
+}) => {
   return (
     <Player.Provider>
       <MinimalVideoSkin className="spatial-mono-video-player">
-        <MonoVideoCanvas url={props.src} />
+        <MonoVideoCanvas url={""} />
+        <Poster className="media-poster" src={props.previewSrc} />
       </MinimalVideoSkin>
     </Player.Provider>
   );
