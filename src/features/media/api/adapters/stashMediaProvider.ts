@@ -10,6 +10,7 @@ import type {
 } from "../mediaTypes";
 
 const defaultPageSize = 10;
+const tagCatalogPageSize = 500;
 const defaultEndpoint = "/stash/graphql";
 const stashProxyPrefix = "/stash";
 
@@ -57,6 +58,7 @@ const findScenesQuery = `
 const findTagsQuery = `
   query FindTags($filter: FindFilterType!, $tagFilter: TagFilterType) {
     findTags(filter: $filter, tag_filter: $tagFilter) {
+      count
       tags {
         id
         name
@@ -96,6 +98,7 @@ type StashTag = {
 
 type StashFindTagsData = {
   findTags?: {
+    count?: number;
     tags?: StashTag[];
   };
 };
@@ -306,6 +309,61 @@ async function fetchTags(
   });
 }
 
+async function fetchAllTags() {
+  const tags: MediaTag[] = [];
+  let page = 1;
+  let receivedTags = 0;
+
+  while (true) {
+    const { data } = await executeStashGraphQl<StashFindTagsData>(
+      findTagsQuery,
+      {
+        filter: {
+          page,
+          per_page: tagCatalogPageSize,
+          sort: "name",
+          direction: "ASC",
+        },
+        tagFilter: null,
+      },
+    );
+    const rawPageTags = data?.findTags?.tags ?? [];
+    const pageTags = rawPageTags.flatMap((tag) => {
+      const mappedTag = mapTag(tag);
+
+      if (mappedTag) {
+        tagIdByNormalizedName.set(
+          normalizeTagName(mappedTag.name),
+          mappedTag.id,
+        );
+        return [mappedTag];
+      }
+
+      return [];
+    });
+
+    tags.push(...pageTags);
+    receivedTags += rawPageTags.length;
+
+    if (rawPageTags.length === 0) {
+      break;
+    }
+
+    const totalTags = data?.findTags?.count;
+    if (
+      totalTags !== undefined
+        ? receivedTags >= totalTags
+        : rawPageTags.length < tagCatalogPageSize
+    ) {
+      break;
+    }
+
+    page += 1;
+  }
+
+  return tags;
+}
+
 async function resolveTagIds(tags: MediaTagFilter[]) {
   const resolvedIds = new Set<string>();
   let hasUnresolvedTag = false;
@@ -409,5 +467,8 @@ export const stashMediaProvider: MediaProviderAdapter = {
   },
   async searchTags(request: MediaTagSearchRequest) {
     return fetchTags(request);
+  },
+  async listTags() {
+    return fetchAllTags();
   },
 };

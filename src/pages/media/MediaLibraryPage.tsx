@@ -12,7 +12,7 @@ import {
 } from "@astryxdesign/core";
 import { useAppShellMobile } from "@astryxdesign/core/AppShell";
 import {
-  fetchMediaTags,
+  fetchAllMediaTags,
   fetchMediaList,
   type MediaItem,
   type MediaListResult,
@@ -36,6 +36,27 @@ const defaultVrTag: MediaTagToken = {
   isEnabled: true,
 };
 
+function toTagSearchToken(tag: MediaTag): MediaTagToken | null {
+  if (tag.name.toLowerCase() === defaultVrTag.name.toLowerCase()) {
+    return null;
+  }
+
+  return { ...tag, isEnabled: true };
+}
+
+function matchesTagSearch(tag: MediaTagToken, query: string) {
+  const normalizedQuery = query.trim().toLowerCase();
+
+  if (normalizedQuery.length === 0) {
+    return true;
+  }
+
+  return (
+    tag.name.toLowerCase().includes(normalizedQuery) ||
+    tag.label.toLowerCase().includes(normalizedQuery)
+  );
+}
+
 function isDefaultTag(tag: MediaTagToken) {
   return tag.id === defaultVrTag.id;
 }
@@ -49,6 +70,7 @@ export function MediaLibraryPage(props: { providerId?: string }) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
+  const [tagCatalog, setTagCatalog] = useState<MediaTagToken[]>([]);
   const [selectedPlayerItem, setSelectedPlayerItem] = useState<MediaItem | null>(
     null,
   );
@@ -68,19 +90,8 @@ export function MediaLibraryPage(props: { providerId?: string }) {
 
   const tagSearchSource = useMemo<SearchSource<MediaTagToken>>(
     () => {
-      async function searchTags(searchQuery: string) {
-        const tags = await fetchMediaTags({
-          providerId: props.providerId,
-          query: searchQuery,
-          limit: 10,
-        });
-
-        return tags
-          .filter(
-            (tag) =>
-              tag.name.toLowerCase() !== defaultVrTag.name.toLowerCase(),
-          )
-          .map((tag) => ({ ...tag, isEnabled: true }));
+      function searchTags(searchQuery: string) {
+        return tagCatalog.filter((tag) => matchesTagSearch(tag, searchQuery));
       }
 
       return {
@@ -88,10 +99,42 @@ export function MediaLibraryPage(props: { providerId?: string }) {
         bootstrap: () => searchTags(""),
       };
     },
-    [props.providerId],
+    [tagCatalog],
   );
 
   const { isMobile } = useAppShellMobile();
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function loadTagCatalog() {
+      try {
+        const tags = await fetchAllMediaTags({
+          providerId: props.providerId,
+        });
+
+        if (isActive) {
+          setTagCatalog(
+            tags.flatMap((tag) => {
+              const token = toTagSearchToken(tag);
+
+              return token ? [token] : [];
+            }),
+          );
+        }
+      } catch {
+        if (isActive) {
+          setTagCatalog([]);
+        }
+      }
+    }
+
+    void loadTagCatalog();
+
+    return () => {
+      isActive = false;
+    };
+  }, [props.providerId]);
 
   useEffect(() => {
     let isActive = true;
@@ -203,6 +246,7 @@ export function MediaLibraryPage(props: { providerId?: string }) {
           searchSource={tagSearchSource}
           placeholder="Add tags"
           hasEntriesOnFocus
+          maxMenuItems={Math.max(10, tagCatalog.length)}
           debounceMs={200}
           renderToken={(tag, onRemove) =>
             isDefaultTag(tag) ? (

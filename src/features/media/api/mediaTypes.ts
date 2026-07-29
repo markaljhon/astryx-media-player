@@ -46,6 +46,14 @@ export type MediaTagSearchRequest = {
   limit?: number;
 };
 
+export type FetchMediaTagsOptions = MediaTagSearchRequest & {
+  providerId?: MediaProviderId;
+};
+
+export type FetchAllMediaTagsOptions = {
+  providerId?: MediaProviderId;
+};
+
 export type FetchMediaListOptions = MediaListRequest & {
   providerId?: MediaProviderId;
 };
@@ -64,5 +72,6 @@ export type MediaListResult = {
 export interface MediaProviderAdapter {
   id: MediaProviderId;
   listMedia(request: MediaListRequest): Promise<MediaListResult>;
+  listTags?(): Promise<MediaTag[]>;
   searchTags?(request: MediaTagSearchRequest): Promise<MediaTag[]>;
 }

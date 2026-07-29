@@ -5,7 +5,13 @@ import {
 } from "./mediaProviders";
 import { localMediaProvider } from "./adapters/localMediaProvider";
 import { stashMediaProvider } from "./adapters/stashMediaProvider";
-import type { FetchMediaListOptions, MediaItem, MediaTag } from "./mediaTypes";
+import type {
+  FetchAllMediaTagsOptions,
+  FetchMediaListOptions,
+  FetchMediaTagsOptions,
+  MediaItem,
+  MediaTag,
+} from "./mediaTypes";
 import type {
   FetchPaginatedMediaListOptions,
   MediaListResult,
@@ -16,6 +22,8 @@ registerMediaProvider(stashMediaProvider);
 
 export type {
   FetchMediaListOptions,
+  FetchMediaTagsOptions,
+  FetchAllMediaTagsOptions,
   FetchPaginatedMediaListOptions,
   MediaItem,
   MediaListResult,
@@ -63,6 +71,7 @@ export async function fetchMediaList(
   }
 
   const result = await adapter.listMedia(normalizeMediaListRequest(options));
+  console.log("fetchMediaList result:", result);
 
   return "paginated" in options && options.paginated ? result : result.items;
 }
@@ -71,15 +80,21 @@ export async function searchMedia(query: string): Promise<MediaItem[]> {
   return fetchMediaList({ query });
 }
 
-export async function fetchMediaTags(
-  options: FetchMediaListOptions = {},
-): Promise<MediaTag[]> {
-  const providerId = options.providerId ?? defaultMediaProviderId;
+function getMediaProviderAdapter(providerId: string) {
   const adapter = getMediaProvider(providerId);
 
   if (!adapter) {
     throw new Error(`No media provider adapter registered for "${providerId}".`);
   }
+
+  return adapter;
+}
+
+export async function fetchMediaTags(
+  options: FetchMediaTagsOptions = {},
+): Promise<MediaTag[]> {
+  const providerId = options.providerId ?? defaultMediaProviderId;
+  const adapter = getMediaProviderAdapter(providerId);
 
   if (!adapter.searchTags) {
     return [];
@@ -89,4 +104,17 @@ export async function fetchMediaTags(
     query: options.query,
     limit: options.limit,
   });
+}
+
+export async function fetchAllMediaTags(
+  options: FetchAllMediaTagsOptions = {},
+): Promise<MediaTag[]> {
+  const providerId = options.providerId ?? defaultMediaProviderId;
+  const adapter = getMediaProviderAdapter(providerId);
+
+  if (adapter.listTags) {
+    return adapter.listTags();
+  }
+
+  return adapter.searchTags?.({}) ?? [];
 }
