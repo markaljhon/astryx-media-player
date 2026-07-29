@@ -17,11 +17,11 @@ import {
   type MediaItem,
   type MediaListResult,
   type MediaTag,
-} from "../../features/media/api/mediaApi";
-import { MediaGalleryCard } from "../../features/media/components/MediaGalleryCard";
-import { MediaSearchBar } from "../../features/media/components/MediaSearchBar";
-import { MediaSkeletonGallery } from "../../features/media/components/MediaSkeletonGallery";
-import { VideoPlayerAdapter } from "../../features/players/components/VideoPlayerAdapter";
+} from "@/features/media/api/mediaApi";
+import { MediaGalleryCard } from "@/features/media/components/MediaGalleryCard";
+import { MediaSearchBar } from "@/features/media/components/MediaSearchBar";
+import { MediaSkeletonGallery } from "@/features/media/components/MediaSkeletonGallery";
+import { VideoPlayerAdapter } from "@/features/players/components/VideoPlayerAdapter";
 
 type MediaTagToken = MediaTag & {
   isDefault?: boolean;
@@ -52,8 +52,8 @@ function matchesTagSearch(tag: MediaTagToken, query: string) {
   }
 
   return (
-    tag.name.toLowerCase().includes(normalizedQuery) ||
-    tag.label.toLowerCase().includes(normalizedQuery)
+    tag.name.toLowerCase().includes(normalizedQuery)
+    || tag.label.toLowerCase().includes(normalizedQuery)
   );
 }
 
@@ -71,9 +71,8 @@ export function MediaLibraryPage(props: { providerId?: string }) {
   const [pageSize, setPageSize] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const [tagCatalog, setTagCatalog] = useState<MediaTagToken[]>([]);
-  const [selectedPlayerItem, setSelectedPlayerItem] = useState<MediaItem | null>(
-    null,
-  );
+  const [selectedPlayerItem, setSelectedPlayerItem] =
+    useState<MediaItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const trimmedQuery = query.trim();
@@ -88,19 +87,16 @@ export function MediaLibraryPage(props: { providerId?: string }) {
     [selectedTags],
   );
 
-  const tagSearchSource = useMemo<SearchSource<MediaTagToken>>(
-    () => {
-      function searchTags(searchQuery: string) {
-        return tagCatalog.filter((tag) => matchesTagSearch(tag, searchQuery));
-      }
+  const tagSearchSource = useMemo<SearchSource<MediaTagToken>>(() => {
+    function searchTags(searchQuery: string) {
+      return tagCatalog.filter((tag) => matchesTagSearch(tag, searchQuery));
+    }
 
-      return {
-        search: searchTags,
-        bootstrap: () => searchTags(""),
-      };
-    },
-    [tagCatalog],
-  );
+    return {
+      search: searchTags,
+      bootstrap: () => searchTags(""),
+    };
+  }, [tagCatalog]);
 
   const { isMobile } = useAppShellMobile();
 
@@ -164,9 +160,9 @@ export function MediaLibraryPage(props: { providerId?: string }) {
           setItems([]);
           setTotalItems(0);
           setError(
-            loadError instanceof Error
-              ? loadError.message
-              : "Unable to load media items.",
+            loadError instanceof Error ?
+              loadError.message
+            : "Unable to load media items.",
           );
         }
       } finally {
@@ -195,8 +191,7 @@ export function MediaLibraryPage(props: { providerId?: string }) {
 
   function handleTagsChange(nextTags: MediaTagToken[]) {
     setSelectedTags((currentTags) => {
-      const currentDefaultTag =
-        currentTags.find(isDefaultTag) ?? defaultVrTag;
+      const currentDefaultTag = currentTags.find(isDefaultTag) ?? defaultVrTag;
       const uniqueTags = new Map<string, MediaTagToken>();
 
       for (const tag of nextTags) {
@@ -213,9 +208,9 @@ export function MediaLibraryPage(props: { providerId?: string }) {
   function toggleDefaultTag() {
     setSelectedTags((currentTags) =>
       currentTags.map((tag) =>
-        isDefaultTag(tag)
-          ? { ...tag, isEnabled: tag.isEnabled === false }
-          : tag,
+        isDefaultTag(tag) ?
+          { ...tag, isEnabled: tag.isEnabled === false }
+        : tag,
       ),
     );
     setPage(1);
@@ -249,20 +244,18 @@ export function MediaLibraryPage(props: { providerId?: string }) {
           maxMenuItems={Math.max(10, tagCatalog.length)}
           debounceMs={200}
           renderToken={(tag, onRemove) =>
-            isDefaultTag(tag) ? (
+            isDefaultTag(tag) ?
               <Token
                 label={tag.label}
                 color={tag.isEnabled === false ? "gray" : "cyan"}
                 onClick={toggleDefaultTag}
                 description={
-                  tag.isEnabled === false
-                    ? "Click to enable the default VR tag filter."
-                    : "Click to disable the default VR tag filter."
+                  tag.isEnabled === false ?
+                    "Click to enable the default VR tag filter."
+                  : "Click to disable the default VR tag filter."
                 }
               />
-            ) : (
-              <Token label={tag.label} color="gray" onRemove={onRemove} />
-            )
+            : <Token label={tag.label} color="gray" onRemove={onRemove} />
           }
         />
 
@@ -271,27 +264,28 @@ export function MediaLibraryPage(props: { providerId?: string }) {
             <VStack gap={1} padding={3}>
               <Heading level={2}>Gallery preview</Heading>
               <Text type="supporting" color="secondary">
-                {error
-                  ? "The media provider returned an error."
-                  : items.length > 0
-                    ? `Showing ${items.length} item${items.length === 1 ? "" : "s"}${trimmedQuery.length > 0 ? ` for "${trimmedQuery}"` : ""}.`
-                    : trimmedQuery.length > 0
-                      ? `No items matched "${trimmedQuery}".`
-                      : "Showing the current media library from the default provider."}
+                {error ?
+                  "The media provider returned an error."
+                : items.length > 0 ?
+                  `Showing ${items.length} item${items.length === 1 ? "" : "s"}${trimmedQuery.length > 0 ? ` for "${trimmedQuery}"` : ""}.`
+                : trimmedQuery.length > 0 ?
+                  `No items matched "${trimmedQuery}".`
+                : "Showing the current media library from the default provider."
+                }
               </Text>
             </VStack>
 
-            {isLoading ? (
+            {isLoading ?
               <VStack paddingInline={isMobile ? 0 : 3}>
                 <MediaSkeletonGallery count={8} />
               </VStack>
-            ) : error ? (
+            : error ?
               <VStack gap={1} padding={3}>
                 <Text type="body" color="secondary">
                   {error}
                 </Text>
               </VStack>
-            ) : items.length === 0 ? (
+            : items.length === 0 ?
               <VStack gap={1} padding={3}>
                 <Text type="body">
                   No media is available yet for this provider.
@@ -301,8 +295,7 @@ export function MediaLibraryPage(props: { providerId?: string }) {
                   adapter later.
                 </Text>
               </VStack>
-            ) : (
-              <VStack paddingInline={isMobile ? 0 : 3} height="100%">
+            : <VStack paddingInline={isMobile ? 0 : 3} height="100%">
                 <Grid columns={{ minWidth: 220, max: 4 }} gap={3}>
                   {items.map((item) => (
                     <MediaGalleryCard
@@ -323,7 +316,7 @@ export function MediaLibraryPage(props: { providerId?: string }) {
                   style={{ paddingBlock: "var(--spacing-4)" }}
                 />
               </VStack>
-            )}
+            }
           </VStack>
         </Section>
       </VStack>
