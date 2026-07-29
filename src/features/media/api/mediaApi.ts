@@ -9,13 +9,10 @@ import type {
   FetchAllMediaTagsOptions,
   FetchMediaListOptions,
   FetchMediaTagsOptions,
-  MediaItem,
-  MediaTag,
-} from "./mediaTypes";
-import type {
   FetchPaginatedMediaListOptions,
   MediaListResult,
-} from "./mediaTypes";
+} from "@/types/api";
+import type { MediaItem, MediaTag } from "@/types/media";
 
 registerMediaProvider(localMediaProvider);
 registerMediaProvider(stashMediaProvider);
@@ -25,17 +22,16 @@ export type {
   FetchMediaTagsOptions,
   FetchAllMediaTagsOptions,
   FetchPaginatedMediaListOptions,
-  MediaItem,
   MediaListResult,
-  MediaTag,
-} from "./mediaTypes";
+} from "@/types/api";
+export type { MediaItem, MediaTag } from "@/types/media";
 export {
   defaultMediaProviderId,
   getMediaProvider,
   listMediaProviders,
   registerMediaProvider,
 } from "./mediaProviders";
-export type { MediaProviderAdapter } from "./mediaTypes";
+export type { MediaProviderAdapter } from "@/types/api";
 
 export function normalizeMediaListRequest(options: FetchMediaListOptions = {}) {
   const page = Math.max(1, Math.floor(options.page ?? 1));

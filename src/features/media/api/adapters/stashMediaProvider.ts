@@ -1,13 +1,15 @@
 import type {
-  MediaItem,
   MediaListRequest,
   MediaProviderAdapter,
+  MediaTagSearchRequest,
+} from "@/types/api";
+import type {
+  MediaItem,
   MediaTag,
   MediaTagFilter,
-  MediaTagSearchRequest,
   StereoVideoLayout,
   VideoProjection,
-} from "../mediaTypes";
+} from "@/types/media";
 
 const defaultPageSize = 10;
 const tagCatalogPageSize = 500;

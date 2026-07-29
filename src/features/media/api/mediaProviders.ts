@@ -1,4 +1,5 @@
-import type { MediaProviderAdapter, MediaProviderId } from "./mediaTypes";
+import type { MediaProviderAdapter } from "@/types/api";
+import type { MediaProviderId } from "@/types/media";
 
 const providerRegistry = new Map<MediaProviderId, MediaProviderAdapter>();
 

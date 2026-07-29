@@ -11,14 +11,12 @@ import {
   Center,
   Heading,
   HStack,
-  Overlay,
   Section,
   Text,
   Token,
   VStack,
 } from "@astryxdesign/core";
-import { MediaTheme } from "@astryxdesign/core/theme";
-import type { MediaItem } from "../api/mediaTypes";
+import type { MediaItem } from "@/types/media";
 
 type MediaGalleryCardProps = {
   item: MediaItem;

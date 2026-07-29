@@ -1,9 +1,8 @@
 import type {
-  MediaItem,
   MediaListRequest,
   MediaProviderAdapter,
-  MediaTag,
-} from "../mediaTypes";
+} from "@/types/api";
+import type { MediaItem, MediaTag } from "@/types/media";
 
 const localMediaCatalog: MediaItem[] = [
   {
@@ -13,8 +12,25 @@ const localMediaCatalog: MediaItem[] = [
     providerId: "local",
     description: "Intro clip for the featured release.",
     durationMs: 92_000,
-    previewVideoUrl: "https://cdn.aframe.io/360-video-boilerplate/video/city.mp4",
+    previewVideoUrl:
+      "https://cdn.aframe.io/360-video-boilerplate/video/city.mp4",
     sourceUrl: "https://cdn.aframe.io/360-video-boilerplate/video/city.mp4",
+    videoProjection: "vr180",
+    stereoLayout: "side-by-side",
+    tags: ["VR"],
+  },
+  {
+    id: "374",
+    title: "testvrsbs.mp4",
+    kind: "video",
+    providerId: "stash",
+    description: "",
+    thumbnailUrl: "/stash/scene/374/screenshot?t=1781553890",
+    previewVideoUrl: "/stash/scene/374/preview",
+    sourceUrl: "/stash/scene/374/stream",
+    videoProjection: "vr180",
+    stereoLayout: "side-by-side",
+    durationMs: 105820,
     tags: ["VR"],
   },
 ];
@@ -26,12 +42,7 @@ function matchesQuery(item: MediaItem, query: string) {
     return true;
   }
 
-  return [
-    item.title,
-    item.kind,
-    item.description,
-    item.tags?.join(" "),
-  ]
+  return [item.title, item.kind, item.description, item.tags?.join(" ")]
     .filter((value): value is string => typeof value === "string")
     .some((value) => value.toLowerCase().includes(normalizedQuery));
 }
