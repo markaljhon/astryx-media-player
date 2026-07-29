@@ -1,7 +1,7 @@
 import type { ComponentType, CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { Dialog, Icon, IconButton, StackItem, VStack } from "@astryxdesign/core";
-import type { MediaItem } from "../../media/api/mediaTypes";
+import type { MediaItem } from "@/types/media";
 import { FlatLightboxVideoPlayer } from "../components/FlatLightboxVideoPlayer";
 import { SpatialMonoVideoPlayer } from "../SpatialMonoVideoPlayer";
 

@@ -1,4 +1,4 @@
-import type { MediaItem } from "../../media/api/mediaTypes";
+import type { MediaItem } from "@/types/media";
 import { getVideoPlayerAdapter } from "../api/videoPlayerAdapters";
 
 type VideoPlayerAdapterProps = {

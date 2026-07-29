@@ -20,7 +20,7 @@ import {
   SRGBColorSpace,
   VideoTexture,
 } from "three";
-import type { StereoVideoLayout } from "../../media/api/mediaTypes";
+import type { StereoVideoLayout } from "@/types/media";
 import type { VideoPlayerProps } from "../api/videoPlayerAdapters";
 import { Icon, IconButton } from "@astryxdesign/core";
 
