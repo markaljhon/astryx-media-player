@@ -20,12 +20,14 @@ export const SpatialVideoMaterial = (props: SpatialVideoMaterialProps) => {
       return;
     }
 
-    setMedia(texture.image);
+    const video = texture.image;
+    setMedia(video);
 
     return () => {
       setMedia?.((currentMedia) =>
-        currentMedia === texture.image ? null : currentMedia,
+        currentMedia === video ? null : currentMedia,
       );
+      video.pause();
     };
   }, [setMedia, texture.image]);
 
