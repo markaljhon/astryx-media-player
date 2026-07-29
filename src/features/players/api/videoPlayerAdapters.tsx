@@ -46,7 +46,7 @@ const spatialDialogPlayerStyle: CSSProperties = {
   width: "100dvw",
 };
 
-function hasSpatialVideoCue(item: MediaItem) {
+const hasSpatialVideoCue = (item: MediaItem) => {
   if (item.kind !== "video") {
     return false;
   }
@@ -63,13 +63,13 @@ function hasSpatialVideoCue(item: MediaItem) {
   return /\b(3d|vr|vr180|vr360|sbs|side[- ]?by[- ]?side|top[- ]?bottom|over[- ]?under)\b/.test(
     searchableText,
   );
-}
+};
 
-function SpatialMonoVideoPlayerAdapter({
+const spatialMonoVideoPlayerAdapter = ({
   item,
   isOpen,
   onOpenChange,
-}: VideoPlayerProps) {
+}: VideoPlayerProps) => {
   if (!item.sourceUrl || typeof document === "undefined") {
     return null;
   }
@@ -111,13 +111,13 @@ function SpatialMonoVideoPlayerAdapter({
     </Dialog>,
     document.body,
   );
-}
+};
 
 export const videoPlayerAdapters: VideoPlayerAdapter[] = [
   {
     id: "spatial-mono-r3f",
     canPlay: (item) => Boolean(item.sourceUrl) && hasSpatialVideoCue(item),
-    Component: SpatialMonoVideoPlayerAdapter,
+    Component: spatialMonoVideoPlayerAdapter,
   },
   {
     id: "flat-lightbox",
@@ -126,6 +126,6 @@ export const videoPlayerAdapters: VideoPlayerAdapter[] = [
   },
 ];
 
-export function getVideoPlayerAdapter(item: MediaItem) {
+export const getVideoPlayerAdapter = (item: MediaItem) => {
   return videoPlayerAdapters.find((adapter) => adapter.canPlay(item));
-}
+};

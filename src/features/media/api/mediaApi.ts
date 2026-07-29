@@ -33,7 +33,9 @@ export {
 } from "./mediaProviders";
 export type { MediaProviderAdapter } from "@/types/api";
 
-export function normalizeMediaListRequest(options: FetchMediaListOptions = {}) {
+export const normalizeMediaListRequest = (
+  options: FetchMediaListOptions = {},
+) => {
   const page = Math.max(1, Math.floor(options.page ?? 1));
   const requestedPageSize = options.pageSize ?? options.limit;
   const pageSize =
@@ -48,17 +50,16 @@ export function normalizeMediaListRequest(options: FetchMediaListOptions = {}) {
     page,
     pageSize,
   };
-}
+};
 
-export async function fetchMediaList(
-  options: FetchPaginatedMediaListOptions,
-): Promise<MediaListResult>;
-export async function fetchMediaList(
-  options?: FetchMediaListOptions,
-): Promise<MediaItem[]>;
-export async function fetchMediaList(
+export type FetchMediaList = {
+  (options: FetchPaginatedMediaListOptions): Promise<MediaListResult>;
+  (options?: FetchMediaListOptions): Promise<MediaItem[]>;
+};
+
+export const fetchMediaList = (async (
   options: FetchMediaListOptions | FetchPaginatedMediaListOptions = {},
-): Promise<MediaItem[] | MediaListResult> {
+): Promise<MediaItem[] | MediaListResult> => {
   const providerId = options.providerId ?? defaultMediaProviderId;
   const adapter = getMediaProvider(providerId);
 
@@ -70,13 +71,13 @@ export async function fetchMediaList(
   console.log("fetchMediaList result:", result);
 
   return "paginated" in options && options.paginated ? result : result.items;
-}
+}) as FetchMediaList;
 
-export async function searchMedia(query: string): Promise<MediaItem[]> {
+export const searchMedia = async (query: string): Promise<MediaItem[]> => {
   return fetchMediaList({ query });
-}
+};
 
-function getMediaProviderAdapter(providerId: string) {
+const getMediaProviderAdapter = (providerId: string) => {
   const adapter = getMediaProvider(providerId);
 
   if (!adapter) {
@@ -84,11 +85,11 @@ function getMediaProviderAdapter(providerId: string) {
   }
 
   return adapter;
-}
+};
 
-export async function fetchMediaTags(
+export const fetchMediaTags = async (
   options: FetchMediaTagsOptions = {},
-): Promise<MediaTag[]> {
+): Promise<MediaTag[]> => {
   const providerId = options.providerId ?? defaultMediaProviderId;
   const adapter = getMediaProviderAdapter(providerId);
 
@@ -100,11 +101,11 @@ export async function fetchMediaTags(
     query: options.query,
     limit: options.limit,
   });
-}
+};
 
-export async function fetchAllMediaTags(
+export const fetchAllMediaTags = async (
   options: FetchAllMediaTagsOptions = {},
-): Promise<MediaTag[]> {
+): Promise<MediaTag[]> => {
   const providerId = options.providerId ?? defaultMediaProviderId;
   const adapter = getMediaProviderAdapter(providerId);
 
@@ -113,4 +114,4 @@ export async function fetchAllMediaTags(
   }
 
   return adapter.searchTags?.({}) ?? [];
-}
+};

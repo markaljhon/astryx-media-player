@@ -4,7 +4,7 @@ type MediaSkeletonCardProps = {
   index: number;
 };
 
-export function MediaSkeletonCard({ index }: MediaSkeletonCardProps) {
+export const MediaSkeletonCard = ({ index }: MediaSkeletonCardProps) => {
   return (
     <Card padding={3}>
       <VStack gap={2}>
@@ -16,4 +16,4 @@ export function MediaSkeletonCard({ index }: MediaSkeletonCardProps) {
       </VStack>
     </Card>
   );
-}
+};

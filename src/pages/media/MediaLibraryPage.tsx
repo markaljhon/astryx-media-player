@@ -36,15 +36,15 @@ const defaultVrTag: MediaTagToken = {
   isEnabled: true,
 };
 
-function toTagSearchToken(tag: MediaTag): MediaTagToken | null {
+const toTagSearchToken = (tag: MediaTag): MediaTagToken | null => {
   if (tag.name.toLowerCase() === defaultVrTag.name.toLowerCase()) {
     return null;
   }
 
   return { ...tag, isEnabled: true };
-}
+};
 
-function matchesTagSearch(tag: MediaTagToken, query: string) {
+const matchesTagSearch = (tag: MediaTagToken, query: string) => {
   const normalizedQuery = query.trim().toLowerCase();
 
   if (normalizedQuery.length === 0) {
@@ -55,13 +55,13 @@ function matchesTagSearch(tag: MediaTagToken, query: string) {
     tag.name.toLowerCase().includes(normalizedQuery)
     || tag.label.toLowerCase().includes(normalizedQuery)
   );
-}
+};
 
-function isDefaultTag(tag: MediaTagToken) {
+const isDefaultTag = (tag: MediaTagToken) => {
   return tag.id === defaultVrTag.id;
-}
+};
 
-export function MediaLibraryPage(props: { providerId?: string }) {
+export const MediaLibraryPage = (props: { providerId?: string }) => {
   const [query, setQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<MediaTagToken[]>([
     defaultVrTag,
@@ -88,9 +88,9 @@ export function MediaLibraryPage(props: { providerId?: string }) {
   );
 
   const tagSearchSource = useMemo<SearchSource<MediaTagToken>>(() => {
-    function searchTags(searchQuery: string) {
+    const searchTags = (searchQuery: string) => {
       return tagCatalog.filter((tag) => matchesTagSearch(tag, searchQuery));
-    }
+    };
 
     return {
       search: searchTags,
@@ -103,7 +103,7 @@ export function MediaLibraryPage(props: { providerId?: string }) {
   useEffect(() => {
     let isActive = true;
 
-    async function loadTagCatalog() {
+    const loadTagCatalog = async () => {
       try {
         const tags = await fetchAllMediaTags({
           providerId: props.providerId,
@@ -123,7 +123,7 @@ export function MediaLibraryPage(props: { providerId?: string }) {
           setTagCatalog([]);
         }
       }
-    }
+    };
 
     void loadTagCatalog();
 
@@ -135,7 +135,7 @@ export function MediaLibraryPage(props: { providerId?: string }) {
   useEffect(() => {
     let isActive = true;
 
-    async function loadMedia() {
+    const loadMedia = async () => {
       setIsLoading(true);
       setError(null);
 
@@ -170,7 +170,7 @@ export function MediaLibraryPage(props: { providerId?: string }) {
           setIsLoading(false);
         }
       }
-    }
+    };
 
     void loadMedia();
 
@@ -179,17 +179,17 @@ export function MediaLibraryPage(props: { providerId?: string }) {
     };
   }, [activeTagFilters, page, pageSize, props.providerId, trimmedQuery]);
 
-  function handleQueryChange(nextQuery: string) {
+  const handleQueryChange = (nextQuery: string) => {
     setQuery(nextQuery);
     setPage(1);
-  }
+  };
 
-  function handlePageSizeChange(nextPageSize: number) {
+  const handlePageSizeChange = (nextPageSize: number) => {
     setPageSize(nextPageSize);
     setPage(1);
-  }
+  };
 
-  function handleTagsChange(nextTags: MediaTagToken[]) {
+  const handleTagsChange = (nextTags: MediaTagToken[]) => {
     setSelectedTags((currentTags) => {
       const currentDefaultTag = currentTags.find(isDefaultTag) ?? defaultVrTag;
       const uniqueTags = new Map<string, MediaTagToken>();
@@ -203,9 +203,9 @@ export function MediaLibraryPage(props: { providerId?: string }) {
       return [currentDefaultTag, ...uniqueTags.values()];
     });
     setPage(1);
-  }
+  };
 
-  function toggleDefaultTag() {
+  const toggleDefaultTag = () => {
     setSelectedTags((currentTags) =>
       currentTags.map((tag) =>
         isDefaultTag(tag) ?
@@ -214,13 +214,13 @@ export function MediaLibraryPage(props: { providerId?: string }) {
       ),
     );
     setPage(1);
-  }
+  };
 
-  function handlePlayerOpenChange(isOpen: boolean) {
+  const handlePlayerOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
       setSelectedPlayerItem(null);
     }
-  }
+  };
 
   return (
     <Section variant="transparent" height="100%" className="safe-area">
@@ -326,4 +326,4 @@ export function MediaLibraryPage(props: { providerId?: string }) {
       />
     </Section>
   );
-}
+};

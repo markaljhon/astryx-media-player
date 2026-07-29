@@ -21,6 +21,8 @@ Project-specific guidance for AI coding agents.
 - This project uses `@videojs/react`, not the legacy v8 `video.js` player API. Prefer the v10 React model: `createPlayer({ features })` creates `Player.Provider`, `Player.Container`, typed hooks, and the player store boundary.
 - For video players, start from the `@videojs/react/video` preset docs (`Video`, `videoFeatures`, skins such as `MinimalVideoSkin`) unless a custom feature set is already established in the surrounding code.
 - When editing custom controls, hooks, media attachment, or features, consult the matching docs from the index first (`ui-components`, `create-player`, `use-player`, `use-media-attach`, feature references, and component references).
+- Use arrow-function constants for all JavaScript and TypeScript functions, including React components, helpers, callbacks, and script entry points. TypeScript function contracts should use property signatures such as `run: () => void`.
+- Keep custom SpatialMonoVideoPlayer React components and local helper functions as arrow-function constants.
 
 <!-- ASTRYX:START -->
 Astryx v0.1.7 · 150 components

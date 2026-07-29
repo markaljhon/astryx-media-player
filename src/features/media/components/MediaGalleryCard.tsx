@@ -23,7 +23,7 @@ type MediaGalleryCardProps = {
   onPlay?: (item: MediaItem) => void;
 };
 
-function formatDuration(durationMs?: number) {
+const formatDuration = (durationMs?: number) => {
   if (typeof durationMs !== "number") {
     return "No duration";
   }
@@ -33,9 +33,9 @@ function formatDuration(durationMs?: number) {
   const seconds = totalSeconds % 60;
 
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-}
+};
 
-function getKindTokenColor(kind: MediaItem["kind"]) {
+const getKindTokenColor = (kind: MediaItem["kind"]) => {
   switch (kind) {
     case "audio":
       return "purple";
@@ -45,9 +45,9 @@ function getKindTokenColor(kind: MediaItem["kind"]) {
     default:
       return "cyan";
   }
-}
+};
 
-export function MediaGalleryCard({ item, onPlay }: MediaGalleryCardProps) {
+export const MediaGalleryCard = ({ item, onPlay }: MediaGalleryCardProps) => {
   const previewRef = useRef<HTMLDivElement>(null);
   const previewAudioRef = useRef<HTMLAudioElement>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
@@ -80,14 +80,14 @@ export function MediaGalleryCard({ item, onPlay }: MediaGalleryCardProps) {
       });
     }
 
-    function handleDocumentPointerDown(event: PointerEvent) {
+    const handleDocumentPointerDown = (event: PointerEvent) => {
       if (
         event.target instanceof Node &&
         !previewRef.current?.contains(event.target)
       ) {
         setIsPreviewActive(false);
       }
-    }
+    };
 
     document.addEventListener("pointerdown", handleDocumentPointerDown, true);
 
@@ -105,37 +105,37 @@ export function MediaGalleryCard({ item, onPlay }: MediaGalleryCardProps) {
     };
   }, [isPreviewActive, previewAudioUrl]);
 
-  function activatePreview() {
+  const activatePreview = () => {
     if (hasPreviewMedia) {
       setIsPreviewActive(true);
     }
-  }
+  };
 
-  function deactivatePreview() {
+  const deactivatePreview = () => {
     setIsPreviewActive(false);
-  }
+  };
 
-  function handlePointerEnter(event: ReactPointerEvent<HTMLDivElement>) {
+  const handlePointerEnter = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== "touch") {
       activatePreview();
     }
-  }
+  };
 
-  function handlePointerLeave(event: ReactPointerEvent<HTMLDivElement>) {
+  const handlePointerLeave = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== "touch") {
       deactivatePreview();
     }
-  }
+  };
 
-  function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.pointerType === "touch") {
       activatePreview();
     }
-  }
+  };
 
-  function playItem() {
+  const playItem = () => {
     onPlay?.(item);
-  }
+  };
 
   const previewContent = showPreviewVideo ? (
     <video
@@ -240,4 +240,4 @@ export function MediaGalleryCard({ item, onPlay }: MediaGalleryCardProps) {
       </VStack>
     </Card>
   );
-}
+};

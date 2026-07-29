@@ -112,19 +112,19 @@ type StashFindScenesData = {
   };
 };
 
-function getEndpoint() {
+const getEndpoint = () => {
   const configuredEndpoint = import.meta.env.VITE_STASH_GRAPHQL_ENDPOINT?.trim();
 
   return configuredEndpoint?.startsWith("/") ? configuredEndpoint : defaultEndpoint;
-}
+};
 
-function toDurationMs(durationSeconds: number | null | undefined) {
+const toDurationMs = (durationSeconds: number | null | undefined) => {
   return typeof durationSeconds === "number" && Number.isFinite(durationSeconds)
     ? Math.round(durationSeconds * 1_000)
     : undefined;
-}
+};
 
-function resolveStashUrl(path: string | null, endpoint: string) {
+const resolveStashUrl = (path: string | null, endpoint: string) => {
   if (!path) {
     return undefined;
   }
@@ -145,9 +145,9 @@ function resolveStashUrl(path: string | null, endpoint: string) {
   }
 
   return resolvedUrl.toString();
-}
+};
 
-function inferStereoLayout(scene: StashScene): StereoVideoLayout {
+const inferStereoLayout = (scene: StashScene): StereoVideoLayout => {
   const primaryFile = scene.files[0];
   const searchableText = getSceneSearchableText(scene);
 
@@ -170,9 +170,9 @@ function inferStereoLayout(scene: StashScene): StereoVideoLayout {
   }
 
   return "mono";
-}
+};
 
-function getSceneSearchableText(scene: StashScene) {
+const getSceneSearchableText = (scene: StashScene) => {
   const primaryFile = scene.files[0];
 
   return [
@@ -184,9 +184,9 @@ function getSceneSearchableText(scene: StashScene) {
     .filter((value): value is string => Boolean(value))
     .join(" ")
     .toLowerCase();
-}
+};
 
-function inferVideoProjection(scene: StashScene): VideoProjection {
+const inferVideoProjection = (scene: StashScene): VideoProjection => {
   const searchableText = getSceneSearchableText(scene);
 
   if (/\b(vr360|360)\b/.test(searchableText)) {
@@ -198,9 +198,9 @@ function inferVideoProjection(scene: StashScene): VideoProjection {
   }
 
   return "flat";
-}
+};
 
-function mapScene(scene: StashScene, endpoint: string): MediaItem {
+const mapScene = (scene: StashScene, endpoint: string): MediaItem => {
   const primaryFile = scene.files[0];
 
   return {
@@ -218,12 +218,12 @@ function mapScene(scene: StashScene, endpoint: string): MediaItem {
     durationMs: toDurationMs(primaryFile?.duration),
     tags: scene.tags.flatMap((tag) => (tag.name ? [tag.name] : [])),
   };
-}
+};
 
-async function executeStashGraphQl<TData>(
+const executeStashGraphQl = async <TData>(
   query: string,
   variables: Record<string, unknown>,
-) {
+) => {
   const endpoint = getEndpoint();
   const response = await fetch(endpoint, {
     method: "POST",
@@ -263,9 +263,9 @@ async function executeStashGraphQl<TData>(
   }
 
   return { endpoint, data: payload.data };
-}
+};
 
-function mapTag(tag: StashTag): MediaTag | null {
+const mapTag = (tag: StashTag): MediaTag | null => {
   const name = tag.name?.trim();
 
   if (!name) {
@@ -277,16 +277,16 @@ function mapTag(tag: StashTag): MediaTag | null {
     label: name,
     name,
   };
-}
+};
 
-function normalizeTagName(name: string) {
+const normalizeTagName = (name: string) => {
   return name.trim().toLowerCase();
-}
+};
 
-async function fetchTags(
+const fetchTags = async (
   request: MediaTagSearchRequest,
   tagFilter?: Record<string, unknown>,
-) {
+) => {
   const limit = Math.max(1, Math.floor(request.limit ?? 10));
   const query = request.query?.trim();
   const { data } = await executeStashGraphQl<StashFindTagsData>(findTagsQuery, {
@@ -309,9 +309,9 @@ async function fetchTags(
 
     return [];
   });
-}
+};
 
-async function fetchAllTags() {
+const fetchAllTags = async () => {
   const tags: MediaTag[] = [];
   let page = 1;
   let receivedTags = 0;
@@ -364,9 +364,9 @@ async function fetchAllTags() {
   }
 
   return tags;
-}
+};
 
-async function resolveTagIds(tags: MediaTagFilter[]) {
+const resolveTagIds = async (tags: MediaTagFilter[]) => {
   const resolvedIds = new Set<string>();
   let hasUnresolvedTag = false;
 
@@ -401,9 +401,9 @@ async function resolveTagIds(tags: MediaTagFilter[]) {
   }
 
   return Array.from(resolvedIds);
-}
+};
 
-async function createSceneFilter(tags: MediaTagFilter[] | undefined) {
+const createSceneFilter = async (tags: MediaTagFilter[] | undefined) => {
   if (!tags?.length) {
     return null;
   }
@@ -416,14 +416,14 @@ async function createSceneFilter(tags: MediaTagFilter[] | undefined) {
       modifier: "INCLUDES_ALL",
     },
   };
-}
+};
 
-async function fetchScenes(
+const fetchScenes = async (
   page: number,
   pageSize: number,
   query?: string,
   tags?: MediaTagFilter[],
-) {
+) => {
   const sceneFilter = await createSceneFilter(tags);
   const { endpoint, data } = await executeStashGraphQl<StashFindScenesData>(
     findScenesQuery,
@@ -444,11 +444,11 @@ async function fetchScenes(
     totalItems: data?.findScenes?.count ?? 0,
     scenes: data?.findScenes?.scenes ?? [],
   };
-}
+};
 
 export const stashMediaProvider: MediaProviderAdapter = {
   id: "stash",
-  async listMedia(request: MediaListRequest) {
+  listMedia: async (request: MediaListRequest) => {
     const page = Math.max(1, Math.floor(request.page ?? 1));
     const requestedPageSize = request.pageSize ?? request.limit ?? defaultPageSize;
     const pageSize = Math.max(1, Math.floor(requestedPageSize));
@@ -467,10 +467,10 @@ export const stashMediaProvider: MediaProviderAdapter = {
       totalItems,
     };
   },
-  async searchTags(request: MediaTagSearchRequest) {
+  searchTags: async (request: MediaTagSearchRequest) => {
     return fetchTags(request);
   },
-  async listTags() {
+  listTags: async () => {
     return fetchAllTags();
   },
 };

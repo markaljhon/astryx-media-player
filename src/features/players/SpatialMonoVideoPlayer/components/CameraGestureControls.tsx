@@ -24,26 +24,26 @@ type PinchState = {
   fov: number;
 };
 
-function clamp(value: number, min: number, max: number) {
+const clamp = (value: number, min: number, max: number) => {
   return Math.min(max, Math.max(min, value));
-}
+};
 
-function getPointerPosition(event: PointerEvent): PointerPosition {
+const getPointerPosition = (event: PointerEvent): PointerPosition => {
   return {
     x: event.clientX,
     y: event.clientY,
   };
-}
+};
 
-function getPointerDistance(
+const getPointerDistance = (
   firstPointer: PointerPosition,
   secondPointer: PointerPosition,
-) {
+) => {
   return Math.hypot(
     secondPointer.x - firstPointer.x,
     secondPointer.y - firstPointer.y,
   );
-}
+};
 
 export const CameraGestureControls = ({ resetKey }: { resetKey: string }) => {
   const { camera, gl } = useThree();
@@ -92,16 +92,16 @@ export const CameraGestureControls = ({ resetKey }: { resetKey: string }) => {
     const activeCamera: PerspectiveCamera = perspectiveCamera;
     const canvas = gl.domElement;
 
-    function applyFov(nextFov: number) {
+    const applyFov = (nextFov: number) => {
       activeCamera.fov = clamp(nextFov, MIN_CAMERA_FOV, MAX_CAMERA_FOV);
       activeCamera.updateProjectionMatrix();
-    }
+    };
 
-    function getPinchPointers() {
+    const getPinchPointers = () => {
       return Array.from(pointersRef.current.values()).slice(0, 2);
-    }
+    };
 
-    function startPinch() {
+    const startPinch = () => {
       const [firstPointer, secondPointer] = getPinchPointers();
 
       if (!firstPointer || !secondPointer) {
@@ -113,14 +113,14 @@ export const CameraGestureControls = ({ resetKey }: { resetKey: string }) => {
         distance: getPointerDistance(firstPointer, secondPointer),
         fov: activeCamera.fov,
       };
-    }
+    };
 
-    function continueSinglePointerRotation(pointer: PointerPosition | null) {
+    const continueSinglePointerRotation = (pointer: PointerPosition | null) => {
       lastRotationPointerRef.current = pointer;
       pinchRef.current = null;
-    }
+    };
 
-    function handlePointerDown(event: PointerEvent) {
+    const handlePointerDown = (event: PointerEvent) => {
       event.preventDefault();
       canvas.setPointerCapture(event.pointerId);
       pointersRef.current.set(event.pointerId, getPointerPosition(event));
@@ -132,9 +132,9 @@ export const CameraGestureControls = ({ resetKey }: { resetKey: string }) => {
       }
 
       continueSinglePointerRotation(getPointerPosition(event));
-    }
+    };
 
-    function handlePointerMove(event: PointerEvent) {
+    const handlePointerMove = (event: PointerEvent) => {
       if (!pointersRef.current.has(event.pointerId)) {
         return;
       }
@@ -186,9 +186,9 @@ export const CameraGestureControls = ({ resetKey }: { resetKey: string }) => {
       );
 
       activeCamera.rotation.set(rotation.pitch, rotation.yaw, 0, "YXZ");
-    }
+    };
 
-    function handlePointerEnd(event: PointerEvent) {
+    const handlePointerEnd = (event: PointerEvent) => {
       pointersRef.current.delete(event.pointerId);
 
       if (canvas.hasPointerCapture(event.pointerId)) {
@@ -208,15 +208,15 @@ export const CameraGestureControls = ({ resetKey }: { resetKey: string }) => {
       }
 
       continueSinglePointerRotation(null);
-    }
+    };
 
-    function handleWheel(event: WheelEvent) {
+    const handleWheel = (event: WheelEvent) => {
       event.preventDefault();
       const wheelScale =
         event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 0.03 : 0.001;
 
       applyFov(activeCamera.fov * Math.exp(event.deltaY * wheelScale));
-    }
+    };
 
     canvas.addEventListener("pointerdown", handlePointerDown);
     canvas.addEventListener("pointermove", handlePointerMove);

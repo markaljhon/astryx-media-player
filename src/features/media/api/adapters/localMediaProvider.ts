@@ -35,7 +35,7 @@ const localMediaCatalog: MediaItem[] = [
   },
 ];
 
-function matchesQuery(item: MediaItem, query: string) {
+const matchesQuery = (item: MediaItem, query: string) => {
   const normalizedQuery = query.trim().toLowerCase();
 
   if (normalizedQuery.length === 0) {
@@ -45,9 +45,9 @@ function matchesQuery(item: MediaItem, query: string) {
   return [item.title, item.kind, item.description, item.tags?.join(" ")]
     .filter((value): value is string => typeof value === "string")
     .some((value) => value.toLowerCase().includes(normalizedQuery));
-}
+};
 
-function matchesTags(item: MediaItem, request: MediaListRequest) {
+const matchesTags = (item: MediaItem, request: MediaListRequest) => {
   if (!request.tags?.length) {
     return true;
   }
@@ -57,9 +57,9 @@ function matchesTags(item: MediaItem, request: MediaListRequest) {
   );
 
   return request.tags.every((tag) => itemTags.has(tag.name.toLowerCase()));
-}
+};
 
-function listLocalTags(query?: string, limit?: number): MediaTag[] {
+const listLocalTags = (query?: string, limit?: number): MediaTag[] => {
   const normalizedQuery = query?.trim().toLowerCase() ?? "";
   const uniqueTags = Array.from(
     new Set(localMediaCatalog.flatMap((item) => item.tags ?? [])),
@@ -72,11 +72,11 @@ function listLocalTags(query?: string, limit?: number): MediaTag[] {
     label: tag,
     name: tag,
   }));
-}
+};
 
 export const localMediaProvider: MediaProviderAdapter = {
   id: "local",
-  async listMedia(request: MediaListRequest) {
+  listMedia: async (request: MediaListRequest) => {
     const page = Math.max(1, Math.floor(request.page ?? 1));
     const pageSize = Math.max(
       1,
@@ -95,7 +95,7 @@ export const localMediaProvider: MediaProviderAdapter = {
       totalItems: filteredItems.length,
     };
   },
-  async searchTags(request) {
+  searchTags: async (request) => {
     return listLocalTags(request.query, request.limit);
   },
 };

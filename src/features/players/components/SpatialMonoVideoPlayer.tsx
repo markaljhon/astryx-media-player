@@ -90,7 +90,7 @@ type PinchState = {
   fov: number;
 };
 
-function useSpatialViewportHeight(isOpen: boolean) {
+const useSpatialViewportHeight = (isOpen: boolean) => {
   useEffect(() => {
     if (!isOpen) {
       return;
@@ -99,13 +99,13 @@ function useSpatialViewportHeight(isOpen: boolean) {
     const root = document.documentElement;
     const visualViewport = window.visualViewport;
 
-    function updateViewportHeight() {
+    const updateViewportHeight = () => {
       const viewportHeight = visualViewport?.height ?? window.innerHeight;
       root.style.setProperty(
         SPATIAL_VIEWPORT_HEIGHT_VARIABLE,
         `${viewportHeight}px`,
       );
-    }
+    };
 
     updateViewportHeight();
     window.addEventListener("resize", updateViewportHeight);
@@ -121,30 +121,30 @@ function useSpatialViewportHeight(isOpen: boolean) {
       root.style.removeProperty(SPATIAL_VIEWPORT_HEIGHT_VARIABLE);
     };
   }, [isOpen]);
-}
+};
 
-function clamp(value: number, min: number, max: number) {
+const clamp = (value: number, min: number, max: number) => {
   return Math.min(max, Math.max(min, value));
-}
+};
 
-function getPointerPosition(event: PointerEvent): PointerPosition {
+const getPointerPosition = (event: PointerEvent): PointerPosition => {
   return {
     x: event.clientX,
     y: event.clientY,
   };
-}
+};
 
-function getPointerDistance(
+const getPointerDistance = (
   firstPointer: PointerPosition,
   secondPointer: PointerPosition,
-) {
+) => {
   return Math.hypot(
     secondPointer.x - firstPointer.x,
     secondPointer.y - firstPointer.y,
   );
-}
+};
 
-function formatTime(seconds: number) {
+const formatTime = (seconds: number) => {
   if (!Number.isFinite(seconds)) {
     return "0:00";
   }
@@ -154,9 +154,9 @@ function formatTime(seconds: number) {
   const remainder = totalSeconds % 60;
 
   return `${minutes}:${remainder.toString().padStart(2, "0")}`;
-}
+};
 
-function applyMonoCrop(texture: VideoTexture, layout: StereoVideoLayout) {
+const applyMonoCrop = (texture: VideoTexture, layout: StereoVideoLayout) => {
   texture.wrapS = ClampToEdgeWrapping;
   texture.wrapT = ClampToEdgeWrapping;
 
@@ -174,15 +174,15 @@ function applyMonoCrop(texture: VideoTexture, layout: StereoVideoLayout) {
 
   texture.repeat.set(-1, 1);
   texture.offset.set(1, 0);
-}
+};
 
-function MonoVideoScreen({
+const MonoVideoScreen = ({
   layout,
   video,
 }: {
   layout: StereoVideoLayout;
   video: HTMLVideoElement;
-}) {
+}) => {
   const d = MathUtils.degToRad;
   const cutoutDegrees = 0; // Adjust this value to control the amount of cutout at the bottom of the sphere
 
@@ -221,9 +221,9 @@ function MonoVideoScreen({
       <meshBasicMaterial map={texture} side={BackSide} toneMapped={false} />
     </mesh>
   );
-}
+};
 
-function CameraGestureControls({ resetKey }: { resetKey: string }) {
+const CameraGestureControls = ({ resetKey }: { resetKey: string }) => {
   const { camera, gl } = useThree();
   const pointersRef = useRef(new Map<number, PointerPosition>());
   const lastRotationPointerRef = useRef<PointerPosition | null>(null);
@@ -269,17 +269,17 @@ function CameraGestureControls({ resetKey }: { resetKey: string }) {
     const activeCamera: PerspectiveCamera = perspectiveCamera;
     const canvas = gl.domElement;
 
-    function applyFov(nextFov: number) {
+    const applyFov = (nextFov: number) => {
       activeCamera.fov = clamp(nextFov, MIN_CAMERA_FOV, MAX_CAMERA_FOV);
       activeCamera.updateProjectionMatrix();
       console.log("FOV:", activeCamera.fov);
-    }
+    };
 
-    function getPinchPointers() {
+    const getPinchPointers = () => {
       return Array.from(pointersRef.current.values()).slice(0, 2);
-    }
+    };
 
-    function startPinch() {
+    const startPinch = () => {
       const [firstPointer, secondPointer] = getPinchPointers();
 
       if (!firstPointer || !secondPointer) {
@@ -291,14 +291,14 @@ function CameraGestureControls({ resetKey }: { resetKey: string }) {
         distance: getPointerDistance(firstPointer, secondPointer),
         fov: activeCamera.fov,
       };
-    }
+    };
 
-    function continueSinglePointerRotation(pointer: PointerPosition | null) {
+    const continueSinglePointerRotation = (pointer: PointerPosition | null) => {
       lastRotationPointerRef.current = pointer;
       pinchRef.current = null;
-    }
+    };
 
-    function handlePointerDown(event: PointerEvent) {
+    const handlePointerDown = (event: PointerEvent) => {
       event.preventDefault();
       canvas.setPointerCapture(event.pointerId);
       pointersRef.current.set(event.pointerId, getPointerPosition(event));
@@ -310,9 +310,9 @@ function CameraGestureControls({ resetKey }: { resetKey: string }) {
       }
 
       continueSinglePointerRotation(getPointerPosition(event));
-    }
+    };
 
-    function handlePointerMove(event: PointerEvent) {
+    const handlePointerMove = (event: PointerEvent) => {
       if (!pointersRef.current.has(event.pointerId)) {
         return;
       }
@@ -370,9 +370,9 @@ function CameraGestureControls({ resetKey }: { resetKey: string }) {
         "Yaw:",
         MathUtils.radToDeg(rotation.yaw),
       );
-    }
+    };
 
-    function handlePointerEnd(event: PointerEvent) {
+    const handlePointerEnd = (event: PointerEvent) => {
       pointersRef.current.delete(event.pointerId);
 
       if (canvas.hasPointerCapture(event.pointerId)) {
@@ -392,15 +392,15 @@ function CameraGestureControls({ resetKey }: { resetKey: string }) {
       }
 
       continueSinglePointerRotation(null);
-    }
+    };
 
-    function handleWheel(event: WheelEvent) {
+    const handleWheel = (event: WheelEvent) => {
       event.preventDefault();
       const wheelScale =
         event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 0.03 : 0.001;
 
       applyFov(activeCamera.fov * Math.exp(event.deltaY * wheelScale));
-    }
+    };
 
     canvas.addEventListener("pointerdown", handlePointerDown);
     canvas.addEventListener("pointermove", handlePointerMove);
@@ -420,15 +420,15 @@ function CameraGestureControls({ resetKey }: { resetKey: string }) {
   }, [camera, gl]);
 
   return null;
-}
+};
 
-function MonoVideoCanvas({
+const MonoVideoCanvas = ({
   layout,
   video,
 }: {
   layout: StereoVideoLayout;
   video: HTMLVideoElement | null;
-}) {
+}) => {
   const resetKey = video?.currentSrc || video?.src || "";
 
   return (
@@ -454,13 +454,13 @@ function MonoVideoCanvas({
       : null}
     </Canvas>
   );
-}
+};
 
-export function SpatialMonoVideoPlayerV1({
+export const SpatialMonoVideoPlayerV1 = ({
   item,
   isOpen,
   onOpenChange,
-}: VideoPlayerProps) {
+}: VideoPlayerProps) => {
   const [video, setVideo] = useState<HTMLVideoElement | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -489,17 +489,17 @@ export function SpatialMonoVideoPlayerV1({
     nextVideo.playsInline = true;
     nextVideo.src = item.sourceUrl;
 
-    function syncPlaybackState() {
+    const syncPlaybackState = () => {
       setIsPaused(nextVideo.paused);
       setCurrentTime(nextVideo.currentTime);
       setDuration(Number.isFinite(nextVideo.duration) ? nextVideo.duration : 0);
-    }
+    };
 
-    function handleError() {
+    const handleError = () => {
       setPlaybackError("This video could not be loaded by the VR mono player.");
-    }
+    };
 
-    async function startPlayback() {
+    const startPlayback = async () => {
       if (hasRequestedAutoplay) {
         return;
       }
@@ -515,7 +515,7 @@ export function SpatialMonoVideoPlayerV1({
           setPlaybackError("Playback was blocked by the browser.");
         }
       }
-    }
+    };
 
     nextVideo.addEventListener("loadedmetadata", syncPlaybackState);
     nextVideo.addEventListener("timeupdate", syncPlaybackState);
@@ -548,7 +548,7 @@ export function SpatialMonoVideoPlayerV1({
     }
   }, [isMuted, video]);
 
-  async function togglePlayback() {
+  const togglePlayback = async () => {
     if (!video) {
       return;
     }
@@ -564,18 +564,18 @@ export function SpatialMonoVideoPlayerV1({
     } catch {
       setPlaybackError("Playback was blocked by the browser.");
     }
-  }
+  };
 
-  function seek(nextTime: number) {
+  const seek = (nextTime: number) => {
     if (!video) {
       return;
     }
 
     video.currentTime = nextTime;
     setCurrentTime(nextTime);
-  }
+  };
 
-  function stopPlayback() {
+  const stopPlayback = () => {
     if (!video) {
       return;
     }
@@ -583,7 +583,7 @@ export function SpatialMonoVideoPlayerV1({
     video.pause();
     video.currentTime = 0;
     setCurrentTime(0);
-  }
+  };
 
   return (
     <Dialog
@@ -661,4 +661,4 @@ export function SpatialMonoVideoPlayerV1({
       </VStack>
     </Dialog>
   );
-}
+};

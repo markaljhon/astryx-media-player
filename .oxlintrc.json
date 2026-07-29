@@ -2,7 +2,20 @@
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["react", "typescript", "oxc"],
   "rules": {
+    "func-style": [
+      "error",
+      "expression",
+      {
+        "allowArrowFunctions": true,
+        "overrides": { "namedExports": "expression" }
+      }
+    ],
+    "prefer-arrow-callback": [
+      "error",
+      { "allowNamedFunctions": false, "allowUnboundThis": false }
+    ],
     "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+    "react/only-export-components": ["warn", { "allowConstantExport": true }],
+    "typescript/method-signature-style": ["error", "property"]
   }
 }

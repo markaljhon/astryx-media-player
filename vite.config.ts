@@ -2,7 +2,7 @@ import { fileURLToPath, URL } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv, type ProxyOptions } from 'vite'
 
-function createStashProxy(mode: string) {
+const createStashProxy = (mode: string) => {
   const env = loadEnv(mode, process.cwd(), '')
   const stashServerUrl =
     env.STASH_SERVER_URL?.trim() ||
@@ -25,7 +25,7 @@ function createStashProxy(mode: string) {
   }
 }
 
-function getServerUrlFromGraphQlEndpoint(endpoint: string | undefined) {
+const getServerUrlFromGraphQlEndpoint = (endpoint: string | undefined) => {
   if (!endpoint) {
     return undefined
   }

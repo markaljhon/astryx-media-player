@@ -5,10 +5,10 @@ type AppLayoutProps = {
   children: ReactNode;
 };
 
-export function AppLayout({ children }: AppLayoutProps) {
+export const AppLayout = ({ children }: AppLayoutProps) => {
   return (
     <AppShell height="fill" variant="elevated" contentPadding={0}>
       {children}
     </AppShell>
   );
-}
+};

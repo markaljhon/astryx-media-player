@@ -5,7 +5,7 @@ type MediaSearchBarProps = {
   onChange: (value: string) => void;
 };
 
-export function MediaSearchBar({ value, onChange }: MediaSearchBarProps) {
+export const MediaSearchBar = ({ value, onChange }: MediaSearchBarProps) => {
   return (
     <TextInput
       label="Search media"
@@ -16,4 +16,4 @@ export function MediaSearchBar({ value, onChange }: MediaSearchBarProps) {
       hasClear
     />
   );
-}
+};

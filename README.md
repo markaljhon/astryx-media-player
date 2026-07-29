@@ -85,6 +85,12 @@ This project follows the Astryx layout rules:
 
 The current theme lives in `src/themes/y2k/y2kTheme.ts`.
 
+## Code Style
+
+- use arrow-function constants for all JavaScript and TypeScript functions
+- export components, helpers, and script entry points as `const` arrow functions
+- use arrow-shaped TypeScript function properties instead of method signatures
+
 ## Development
 
 Common scripts:

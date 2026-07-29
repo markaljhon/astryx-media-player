@@ -5,7 +5,9 @@ type MediaSkeletonGalleryProps = {
   count?: number;
 };
 
-export function MediaSkeletonGallery({ count = 8 }: MediaSkeletonGalleryProps) {
+export const MediaSkeletonGallery = ({
+  count = 8,
+}: MediaSkeletonGalleryProps) => {
   return (
     <Grid columns={{ minWidth: 220, max: 4 }} gap={3}>
       {Array.from({ length: count }, (_, index) => (
@@ -13,4 +15,4 @@ export function MediaSkeletonGallery({ count = 8 }: MediaSkeletonGalleryProps) {
       ))}
     </Grid>
   );
-}
+};

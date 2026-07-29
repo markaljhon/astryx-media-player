@@ -43,7 +43,7 @@ export type MediaListResult = {
 
 export interface MediaProviderAdapter {
   id: MediaProviderId;
-  listMedia(request: MediaListRequest): Promise<MediaListResult>;
-  listTags?(): Promise<MediaTag[]>;
-  searchTags?(request: MediaTagSearchRequest): Promise<MediaTag[]>;
+  listMedia: (request: MediaListRequest) => Promise<MediaListResult>;
+  listTags?: () => Promise<MediaTag[]>;
+  searchTags?: (request: MediaTagSearchRequest) => Promise<MediaTag[]>;
 }

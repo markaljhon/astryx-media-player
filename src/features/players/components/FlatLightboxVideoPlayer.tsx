@@ -1,11 +1,11 @@
 import { Lightbox } from "@astryxdesign/core/Lightbox";
 import type { VideoPlayerProps } from "../api/videoPlayerAdapters";
 
-export function FlatLightboxVideoPlayer({
+export const FlatLightboxVideoPlayer = ({
   item,
   isOpen,
   onOpenChange,
-}: VideoPlayerProps) {
+}: VideoPlayerProps) => {
   if (!item.sourceUrl) {
     return null;
   }
@@ -22,4 +22,4 @@ export function FlatLightboxVideoPlayer({
       }}
     />
   );
-}
+};
