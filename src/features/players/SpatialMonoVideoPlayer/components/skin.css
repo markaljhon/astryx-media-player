@@ -40,6 +40,22 @@
 }
 
 .spatial-mono-video-player.media-minimal-skin
+  .media-controls:has(.media-menu--playback-rate[data-open]) {
+  filter: none;
+  opacity: 1;
+  pointer-events: auto;
+  translate: 0 0;
+}
+
+.spatial-mono-video-player.media-minimal-skin
+  .media-controls:has(.media-menu--playback-rate[data-open])
+  ~ .media-overlay {
+  backdrop-filter: none;
+  background-image: none;
+  opacity: 0;
+}
+
+.spatial-mono-video-player.media-minimal-skin
   .media-error[data-open]
   ~ .media-overlay,
 .spatial-mono-video-player.media-minimal-skin
@@ -52,6 +68,25 @@
 
 .spatial-mono-video-player.media-minimal-skin .media-button--settings {
   display: grid;
+}
+
+.spatial-mono-video-player.media-minimal-skin .media-menu--playback-rate {
+  max-block-size: var(--media-popover-available-height, none);
+  max-inline-size: var(--media-popover-available-width, max-content);
+  overflow: visible;
+  width: max-content;
+}
+
+.spatial-mono-video-player.media-minimal-skin
+  .media-menu--playback-rate
+  .media-menu__group {
+  flex-direction: column;
+}
+
+.spatial-mono-video-player.media-minimal-skin
+  .media-menu--playback-rate
+  .media-menu__item {
+  inline-size: 100%;
 }
 
 .spatial-mono-video-player.media-minimal-skin,

@@ -10,7 +10,7 @@ export const definePlaybackRateFeature = (playbackRates: readonly number[]) =>
     state: ({ target }): MediaPlaybackRateState => ({
       playbackRates,
       playbackRate: 1,
-      setPlaybackRate(rate) {
+      setPlaybackRate: (rate) => {
         const { media } = target();
 
         if (isMediaPlaybackRateCapable(media)) {
@@ -18,7 +18,7 @@ export const definePlaybackRateFeature = (playbackRates: readonly number[]) =>
         }
       },
     }),
-    attach({ target, signal, set }) {
+    attach: ({ target, signal, set }) => {
       const { media } = target;
 
       if (!isMediaPlaybackRateCapable(media)) return;

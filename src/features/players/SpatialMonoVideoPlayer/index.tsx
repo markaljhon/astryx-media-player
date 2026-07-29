@@ -6,14 +6,16 @@ import {
   createPlayer,
   errorFeature,
   playbackFeature,
-  Poster,
   sourceFeature,
   timeFeature,
   volumeFeature,
 } from "@videojs/react";
-import { MinimalVideoSkin } from "@videojs/react/video";
 import { MonoVideoCanvas } from "./components/MonoVideoCanvas";
 import { defaultPlaybackRateFeature } from "./components/playbackRateFeature";
+import {
+  SpatialMonoVideoSkin,
+  type PlaybackRateControlMode,
+} from "./components/SpatialMonoVideoSkin";
 
 const Player = createPlayer({
   features: [
@@ -31,13 +33,17 @@ const Player = createPlayer({
 export const SpatialMonoVideoPlayer = (props: {
   src: string;
   previewSrc?: string;
+  playbackRateControl?: PlaybackRateControlMode;
 }) => {
   return (
     <Player.Provider>
-      <MinimalVideoSkin className="spatial-mono-video-player">
-        <MonoVideoCanvas url={""} />
-        <Poster className="media-poster" src={props.previewSrc} />
-      </MinimalVideoSkin>
+      <SpatialMonoVideoSkin
+        className="spatial-mono-video-player"
+        poster={props.previewSrc}
+        playbackRateControl={props.playbackRateControl}
+      >
+        <MonoVideoCanvas url={props.src} />
+      </SpatialMonoVideoSkin>
     </Player.Provider>
   );
 };
