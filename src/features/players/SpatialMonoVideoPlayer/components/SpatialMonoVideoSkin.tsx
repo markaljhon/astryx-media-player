@@ -83,13 +83,13 @@ export const SpatialMonoVideoSkin = ({
     >
       {children}
 
-      {poster ? (
+      {poster ?
         <Poster
           className="media-poster"
           src={isString(poster) ? poster : undefined}
           render={isRenderProp(poster) ? poster : undefined}
         />
-      ) : null}
+      : null}
 
       <BufferingIndicator
         render={(props) => (
@@ -123,7 +123,10 @@ export const SpatialMonoVideoSkin = ({
             <Tooltip.Root side="top">
               <Tooltip.Trigger
                 render={
-                  <PlayButton className="media-button--play" render={<Button />}>
+                  <PlayButton
+                    className="media-button--play"
+                    render={<Button />}
+                  >
                     <RestartIcon className="media-icon media-icon--restart" />
                     <PlayIcon className="media-icon media-icon--play" />
                     <PauseIcon className="media-icon media-icon--pause" />
@@ -361,7 +364,7 @@ const PlaybackRateControl = ({
   }
 
   return (
-    <Menu.Root side="top" align="center">
+    <Menu.Root side="top" align="end">
       <Menu.Trigger disabled={playbackRate.disabled} render={button} />
       <Menu.Content className="media-popover media-menu media-menu--playback-rate">
         <Menu.RadioGroup
