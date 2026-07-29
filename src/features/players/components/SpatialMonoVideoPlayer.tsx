@@ -351,14 +351,14 @@ function CameraGestureControls({ resetKey }: { resetKey: string }) {
 
       const rotation = rotationRef.current;
       rotation.yaw = clamp(
-        rotation.yaw +
-          (pointerPosition.x - lastRotationPointer.x) * ROTATION_SENSITIVITY,
+        rotation.yaw
+          + (pointerPosition.x - lastRotationPointer.x) * ROTATION_SENSITIVITY,
         MIN_YAW,
         MAX_YAW,
       );
       rotation.pitch = clamp(
-        rotation.pitch +
-          (pointerPosition.y - lastRotationPointer.y) * ROTATION_SENSITIVITY,
+        rotation.pitch
+          + (pointerPosition.y - lastRotationPointer.y) * ROTATION_SENSITIVITY,
         MIN_PITCH,
         MAX_PITCH,
       );
@@ -449,12 +449,14 @@ function MonoVideoCanvas({
     >
       <CameraGestureControls resetKey={resetKey} />
       <ambientLight intensity={1} />
-      {video ? <MonoVideoScreen layout={layout} video={video} /> : null}
+      {video ?
+        <MonoVideoScreen layout={layout} video={video} />
+      : null}
     </Canvas>
   );
 }
 
-export function SpatialMonoVideoPlayer({
+export function SpatialMonoVideoPlayerV1({
   item,
   isOpen,
   onOpenChange,
@@ -614,11 +616,11 @@ export function SpatialMonoVideoPlayer({
             <MonoVideoCanvas layout={layout} video={video} />
           </StackItem>
 
-          {playbackError ? (
+          {playbackError ?
             <Text type="supporting" color="secondary">
               {playbackError}
             </Text>
-          ) : null}
+          : null}
 
           <VStack gap={2} padding={0} style={playbackControlsStyle}>
             <Slider
