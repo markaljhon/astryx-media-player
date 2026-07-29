@@ -2,12 +2,12 @@
 
 A simple media player built with React, Vite, and Astryx.
 
-The first version of the app will focus on:
+The current app includes:
 
 - a search bar for finding media
-- a gallery or list of mostly videos
-- a player surface for playback
-- a structure that can support different players later
+- a gallery of mostly video media
+- flat and spatial video player surfaces
+- provider adapters for local sample media and Stash media
 
 ## App Entry
 
@@ -30,9 +30,9 @@ Use this file for top-level composition:
 - render the page component
 - avoid theme/bootstrap logic here
 
-## Suggested Structure
+## Project Structure
 
-Recommended folders for this project:
+Current folders for this project:
 
 ```txt
 src/
@@ -40,25 +40,38 @@ src/
   App.tsx
 
   layouts/
+    AppLayout.tsx
   pages/
+    media/
   features/
     media/
+      api/
+        adapters/
+      components/
     players/
-  components/
-    ui/
+      api/
+      components/
+      SpatialMonoVideoPlayer/
   themes/
-  lib/
+    y2k/
+
+public/
+scripts/
 ```
 
 ### Where Things Go
 
 - `layouts/` for page shells and structural wrappers
-- `pages/` for route-level screens like the media browser
-- `features/media/` for search, gallery/list UI, and media-specific logic
-- `features/players/` for player adapters and future player types
-- `components/ui/` for shared building blocks like empty, loading, and error states
-- `themes/` for Astryx theme definitions and icon registries
-- `lib/` for shared helpers, API clients, and constants
+- `pages/media/` for the media library route-level screen
+- `features/media/api/` for provider registry, media API facade, and shared media types
+- `features/media/api/adapters/` for concrete media providers like local sample data and Stash
+- `features/media/components/` for search, gallery cards, and media loading states
+- `features/players/api/` for player adapter selection and player-facing contracts
+- `features/players/components/` for general player surfaces such as the flat lightbox player
+- `features/players/SpatialMonoVideoPlayer/` for the dedicated React Three Fiber spatial player and its feature-specific components
+- `themes/y2k/` for the active Astryx theme and icon registry
+- `public/` for static browser assets such as the favicon and web manifest
+- `scripts/` for local tooling, including Stash maintenance scripts
 
 ## Astryx Notes
 
@@ -80,6 +93,7 @@ Common scripts:
 npm run dev
 npm run build
 npm run lint
+npm run stash:tag-vr
 ```
 
 ## Stash media provider
@@ -104,5 +118,3 @@ Do not put the Stash API key in a `VITE_` variable. Vite exposes `VITE_`
 variables to the browser, while `STASH_API_KEY` is only read by the local dev
 server proxy. The Vite proxy can fall back to older `VITE_STASH_*` values during
 migration, but the app no longer reads the API key from client code.
-
-If you want, I can next propose the exact starter folder tree and the first `main.tsx` / `App.tsx` contents before we change code. 
