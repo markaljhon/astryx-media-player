@@ -33,12 +33,7 @@ export const MediaSideNav = () => {
 
   return (
     <SideNav
-      header={
-        <SideNavHeading
-          heading="Astryx Media"
-          subheading="Library and players"
-        />
-      }
+      header={<SideNavHeading heading="Astryx Media Library" />}
       collapsible={true}
     >
       <SideNavSection title="Library">

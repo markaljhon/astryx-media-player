@@ -15,9 +15,11 @@ export const AppLayout = ({
   return (
     <AppShell
       height="fill"
-      variant="elevated"
+      variant="wash"
       contentPadding={contentPadding}
       sideNav={sideNav}
+      mobileNav={{ breakpoint: "md" }}
+      className="safe-area"
     >
       {children}
     </AppShell>
