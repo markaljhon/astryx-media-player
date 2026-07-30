@@ -5,7 +5,9 @@ Project-specific guidance for AI coding agents.
 ## Folder Structure Reference
 
 - `src/main.tsx` handles bootstrapping, Astryx style imports, theme provider setup, and rendering `<App />`.
-- `src/App.tsx` handles top-level app composition and delegates shell layout to `src/layouts/AppLayout.tsx`.
+- `src/App.tsx` renders TanStack `RouterProvider`; keep route definitions under `src/routes/`.
+- `src/routes/` contains explicit code-based TanStack Router configuration. Do not use file-based routing or `@tanstack/router-plugin` unless the project direction changes.
+- Section layout routes own their Astryx `AppShell` configuration through `src/layouts/AppLayout.tsx`; use one layout route per app section when different pages need different side navs.
 - `src/pages/media/` contains route-level media library screens.
 - `src/features/media/api/` contains the media API facade, provider registry, shared media types, and provider adapters under `api/adapters/`.
 - `src/features/media/components/` contains media search, gallery cards, and loading states.

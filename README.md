@@ -24,11 +24,12 @@ Use this file for bootstrapping only:
 
 ### `src/App.tsx`
 
-Use this file for top-level composition:
+Use this file for top-level routing composition:
 
-- choose the main shell and layout
-- render the page component
+- render `RouterProvider`
 - avoid theme/bootstrap logic here
+
+Route definitions live under `src/routes/`.
 
 ## Project Structure
 
@@ -41,6 +42,10 @@ src/
 
   layouts/
     AppLayout.tsx
+  routes/
+    router.tsx
+    rootRoute.tsx
+    mediaRoutes.tsx
   pages/
     media/
   features/
@@ -62,6 +67,7 @@ scripts/
 ### Where Things Go
 
 - `layouts/` for page shells and structural wrappers
+- `routes/` for explicit TanStack Router configuration, layout routes, route guards, and section navigation
 - `pages/media/` for the media library route-level screen
 - `features/media/api/` for provider registry, media API facade, and shared media types
 - `features/media/api/adapters/` for concrete media providers like local sample data and Stash
@@ -84,6 +90,33 @@ This project follows the Astryx layout rules:
 - use `TextInput` for the search field
 
 The current theme lives in `src/themes/y2k/y2kTheme.ts`.
+
+## Routing
+
+This project uses code-based TanStack Router configuration. Do not add
+`@tanstack/router-plugin` or generated file-based routes unless the project
+explicitly changes direction.
+
+- `src/routes/router.tsx` creates the router and registers the route tree.
+- `src/routes/rootRoute.tsx` owns the root route and renders only `<Outlet />`.
+- Section route files such as `src/routes/mediaRoutes.tsx` own their layout
+  route, side nav, and child page routes.
+- `AppShell` belongs in section layout routes through `AppLayout`, not in leaf
+  pages and not in the root route.
+- Different app sections should add their own layout route with their own
+  `sideNav`, for example a future settings route can render
+  `<AppLayout sideNav={<SettingsSideNav />}>`.
+- Full-screen routes that should not have navigation can render their own shell
+  or content directly from a route component.
+
+Current routes:
+
+```txt
+/                    password entry
+/media               Stash media library
+/media/local         local sample media library
+/media/player/$sceneId spatial Stash scene player
+```
 
 ## Code Style
 
