@@ -8,6 +8,7 @@ coverage/
 
 # Vite / local env
 .vite/
+.tanstack/tmp/
 *.local
 .env
 .env.*

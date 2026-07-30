@@ -1,3 +1,5 @@
+import { mediaSearchDefaults } from "@/features/media/routing/mediaSearch";
+
 export type AccessMode = "dev" | "local" | "stash";
 
 const accessModeStorageKey = "astryx-media-player:access-mode";
@@ -6,14 +8,19 @@ const accessModeRouteOptions = {
   dev: {
     to: "/media/player/$sceneId",
     params: { sceneId: "374" },
+    search: mediaSearchDefaults,
     replace: true,
   },
   local: {
-    to: "/media/local",
+    to: "/media/$providerId",
+    params: { providerId: "local" },
+    search: mediaSearchDefaults,
     replace: true,
   },
   stash: {
-    to: "/media",
+    to: "/media/$providerId",
+    params: { providerId: "stash" },
+    search: mediaSearchDefaults,
     replace: true,
   },
 } as const satisfies Record<AccessMode, object>;

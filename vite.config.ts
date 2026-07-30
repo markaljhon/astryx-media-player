@@ -1,4 +1,5 @@
 import { fileURLToPath, URL } from 'node:url'
+import { tanstackRouter } from '@tanstack/router-plugin/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv, type ProxyOptions } from 'vite'
 
@@ -42,7 +43,7 @@ export default defineConfig(({ mode }) => {
   const stashProxy = createStashProxy(mode)
 
   return {
-    plugins: [react()],
+    plugins: [tanstackRouter(), react()],
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),

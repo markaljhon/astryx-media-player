@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
   Grid,
   Heading,
@@ -21,6 +22,7 @@ import {
 import { MediaGalleryCard } from "@/features/media/components/MediaGalleryCard";
 import { MediaSearchBar } from "@/features/media/components/MediaSearchBar";
 import { MediaSkeletonGallery } from "@/features/media/components/MediaSkeletonGallery";
+import type { MediaLibrarySearch } from "@/features/media/routing/mediaSearch";
 import { VideoPlayerAdapter } from "@/features/players/components/VideoPlayerAdapter";
 
 type MediaTagToken = MediaTag & {
@@ -61,21 +63,56 @@ const isDefaultTag = (tag: MediaTagToken) => {
   return tag.id === defaultVrTag.id;
 };
 
+const getRouteTag = (tagName: string, tagCatalog: MediaTagToken[]) => {
+  const normalizedTagName = tagName.trim().toLowerCase();
+
+  return (
+    tagCatalog.find((tag) => {
+      return (
+        tag.id.toLowerCase() === normalizedTagName
+        || tag.name.toLowerCase() === normalizedTagName
+        || tag.label.toLowerCase() === normalizedTagName
+      );
+    }) ?? {
+      id: `route-tag:${tagName}`,
+      label: tagName,
+      name: tagName,
+      isEnabled: true,
+    }
+  );
+};
+
+const getUniqueTagNames = (tags: MediaTagToken[]) => {
+  const uniqueTagNames = new Map<string, string>();
+
+  for (const tag of tags) {
+    if (!isDefaultTag(tag)) {
+      uniqueTagNames.set(tag.name.toLowerCase(), tag.name);
+    }
+  }
+
+  return [...uniqueTagNames.values()];
+};
+
 export const MediaLibraryPage = (props: { providerId?: string }) => {
-  const [query, setQuery] = useState("");
-  const [selectedTags, setSelectedTags] = useState<MediaTagToken[]>([
-    defaultVrTag,
-  ]);
   const [items, setItems] = useState<MediaItem[]>([]);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const [tagCatalog, setTagCatalog] = useState<MediaTagToken[]>([]);
   const [selectedPlayerItem, setSelectedPlayerItem] =
     useState<MediaItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const search = useSearch({ from: "/media" });
+  const navigate = useNavigate({ from: "/media" });
+  const { q: query, page, pageSize, vr } = search;
   const trimmedQuery = query.trim();
+  const selectedTags = useMemo(
+    () => [
+      { ...defaultVrTag, isEnabled: vr },
+      ...search.tags.map((tagName) => getRouteTag(tagName, tagCatalog)),
+    ],
+    [search.tags, tagCatalog, vr],
+  );
   const activeTagFilters = useMemo(
     () =>
       selectedTags
@@ -99,6 +136,16 @@ export const MediaLibraryPage = (props: { providerId?: string }) => {
   }, [tagCatalog]);
 
   const { isMobile } = useAppShellMobile();
+
+  const updateSearch = (nextSearch: Partial<MediaLibrarySearch>) => {
+    void navigate({
+      replace: true,
+      search: (currentSearch) => ({
+        ...currentSearch,
+        ...nextSearch,
+      }),
+    });
+  };
 
   useEffect(() => {
     let isActive = true;
@@ -180,40 +227,19 @@ export const MediaLibraryPage = (props: { providerId?: string }) => {
   }, [activeTagFilters, page, pageSize, props.providerId, trimmedQuery]);
 
   const handleQueryChange = (nextQuery: string) => {
-    setQuery(nextQuery);
-    setPage(1);
+    updateSearch({ q: nextQuery, page: 1 });
   };
 
   const handlePageSizeChange = (nextPageSize: number) => {
-    setPageSize(nextPageSize);
-    setPage(1);
+    updateSearch({ pageSize: nextPageSize, page: 1 });
   };
 
   const handleTagsChange = (nextTags: MediaTagToken[]) => {
-    setSelectedTags((currentTags) => {
-      const currentDefaultTag = currentTags.find(isDefaultTag) ?? defaultVrTag;
-      const uniqueTags = new Map<string, MediaTagToken>();
-
-      for (const tag of nextTags) {
-        if (!isDefaultTag(tag)) {
-          uniqueTags.set(tag.id, { ...tag, isEnabled: true });
-        }
-      }
-
-      return [currentDefaultTag, ...uniqueTags.values()];
-    });
-    setPage(1);
+    updateSearch({ tags: getUniqueTagNames(nextTags), page: 1 });
   };
 
   const toggleDefaultTag = () => {
-    setSelectedTags((currentTags) =>
-      currentTags.map((tag) =>
-        isDefaultTag(tag) ?
-          { ...tag, isEnabled: tag.isEnabled === false }
-        : tag,
-      ),
-    );
-    setPage(1);
+    updateSearch({ vr: !vr, page: 1 });
   };
 
   const handlePlayerOpenChange = (isOpen: boolean) => {
@@ -307,7 +333,7 @@ export const MediaLibraryPage = (props: { providerId?: string }) => {
                 </Grid>
                 <Pagination
                   page={page}
-                  onChange={setPage}
+                  onChange={(nextPage) => updateSearch({ page: nextPage })}
                   totalItems={totalItems}
                   pageSize={pageSize}
                   onPageSizeChange={handlePageSizeChange}

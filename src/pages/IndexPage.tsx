@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Center, TextInput, VStack } from "@astryxdesign/core";
-import { AppLayout } from "@/layouts/AppLayout";
+import { AppShell, Center, TextInput, VStack } from "@astryxdesign/core";
 import {
   getAccessModeForPassword,
   getRouteOptionsForAccessMode,
   setAccessMode,
-} from "./access";
+} from "@/features/auth/access";
 
-export const IndexRoute = () => {
+export const IndexPage = () => {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
@@ -24,7 +23,13 @@ export const IndexRoute = () => {
   }, [navigate, password]);
 
   return (
-    <AppLayout>
+    <AppShell
+      height="fill"
+      variant="wash"
+      contentPadding={0}
+      mobileNav={{ breakpoint: "md" }}
+      className="safe-area"
+    >
       <Center height="100dvh">
         <VStack gap={4} width="18rem">
           <TextInput
@@ -39,6 +44,6 @@ export const IndexRoute = () => {
           />
         </VStack>
       </Center>
-    </AppLayout>
+    </AppShell>
   );
 };

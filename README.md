@@ -11,7 +11,7 @@ The current app includes:
 
 ## App Entry
 
-The app should keep startup concerns in `src/main.tsx` and UI composition in `src/App.tsx`.
+The app should keep startup concerns and the router mount in `src/main.tsx`.
 
 ### `src/main.tsx`
 
@@ -20,16 +20,10 @@ Use this file for bootstrapping only:
 - import Astryx base styles
 - create the React root
 - wrap the app in the active theme provider
-- render `<App />`
-
-### `src/App.tsx`
-
-Use this file for top-level routing composition:
-
 - render `RouterProvider`
-- avoid theme/bootstrap logic here
 
-Route definitions live under `src/routes/`.
+File-based route modules live under `src/routes/`; router setup lives in
+`src/router.tsx`.
 
 ## Project Structure
 
@@ -38,21 +32,26 @@ Current folders for this project:
 ```txt
 src/
   main.tsx
-  App.tsx
+  router.tsx
 
   layouts/
-    AppLayout.tsx
+    MediaSideNav.tsx
+    ProtectedAppShell.tsx
   routes/
-    router.tsx
-    rootRoute.tsx
-    mediaRoutes.tsx
-  pages/
-    media/
+    __root.tsx
+    index.tsx
+    media.tsx
+    media.$providerId.tsx
+    media.index.tsx
+    media.player.$sceneId.tsx
   features/
+    auth/
+      access.ts
     media/
       api/
         adapters/
       components/
+      routing/
     players/
       api/
       components/
@@ -66,12 +65,14 @@ scripts/
 
 ### Where Things Go
 
-- `layouts/` for page shells and structural wrappers
-- `routes/` for explicit TanStack Router configuration, layout routes, route guards, and section navigation
+- `layouts/` for protected route layout wrappers and section navigation
+- `routes/` for TanStack file-based route modules only
+- `features/auth/` for access-mode session state and password routing helpers
 - `pages/media/` for the media library route-level screen
 - `features/media/api/` for provider registry, media API facade, and shared media types
 - `features/media/api/adapters/` for concrete media providers like local sample data and Stash
 - `features/media/components/` for search, gallery cards, and media loading states
+- `features/media/routing/` for media route search-param validation and defaults
 - `features/players/api/` for player adapter selection and player-facing contracts
 - `features/players/components/` for general player surfaces such as the flat lightbox player
 - `features/players/SpatialMonoVideoPlayer/` for the dedicated React Three Fiber spatial player and its feature-specific components
@@ -93,28 +94,40 @@ The current theme lives in `src/themes/y2k/y2kTheme.ts`.
 
 ## Routing
 
-This project uses code-based TanStack Router configuration. Do not add
-`@tanstack/router-plugin` or generated file-based routes unless the project
-explicitly changes direction.
+This project uses TanStack Router file-based routing through
+`@tanstack/router-plugin`.
 
-- `src/routes/router.tsx` creates the router and registers the route tree.
-- `src/routes/rootRoute.tsx` owns the root route and renders only `<Outlet />`.
-- Section route files such as `src/routes/mediaRoutes.tsx` own their layout
-  route, side nav, and child page routes.
-- `AppShell` belongs in section layout routes through `AppLayout`, not in leaf
-  pages and not in the root route.
-- Different app sections should add their own layout route with their own
-  `sideNav`, for example a future settings route can render
-  `<AppLayout sideNav={<SettingsSideNav />}>`.
+- `src/router.tsx` creates the router from `src/routeTree.gen.ts` and registers
+  the router type.
+- `src/routes/__root.tsx` owns the root route and renders only `<Outlet />`.
+- `src/routes/media.tsx` owns the media layout route, protected app shell, media
+  side nav, and shared media search-param validation.
+- Leaf route modules such as `src/routes/media.$providerId.tsx` and
+  `src/routes/media.player.$sceneId.tsx` should stay small and delegate UI to
+  pages or feature components.
+- Shared route helpers belong outside `src/routes/`; files in `src/routes/`
+  are treated as route modules by the generator.
+- `AppShell` belongs in section layout routes or full-screen route pages, not in
+  the root route.
 - Full-screen routes that should not have navigation can render their own shell
   or content directly from a route component.
+
+Media library routes validate and own these URL search parameters:
+
+```txt
+q        media search text
+tags     additional selected tag names
+vr       whether the default VR tag filter is enabled
+page     current gallery page
+pageSize current gallery page size
+```
 
 Current routes:
 
 ```txt
 /                    password entry
 /media               Stash media library
-/media/local         local sample media library
+/media/$providerId   provider-backed media library, for example stash or local
 /media/player/$sceneId spatial Stash scene player
 ```
 

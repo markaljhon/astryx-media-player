@@ -1,5 +1,5 @@
 import type { MouseEvent } from "react";
-import { useLocation, useNavigate } from "@tanstack/react-router";
+import { useLocation, useNavigate, useSearch } from "@tanstack/react-router";
 import {
   SideNav,
   SideNavHeading,
@@ -9,18 +9,27 @@ import {
 
 export const MediaSideNav = () => {
   const navigate = useNavigate();
+  const mediaSearch = useSearch({ from: "/media" });
   const pathname = useLocation({
     select: (location) => location.pathname,
   });
 
   const handleStashClick = (event: MouseEvent<Element>) => {
     event.preventDefault();
-    void navigate({ to: "/media" });
+    void navigate({
+      to: "/media/$providerId",
+      params: { providerId: "stash" },
+      search: mediaSearch,
+    });
   };
 
   const handleLocalClick = (event: MouseEvent<Element>) => {
     event.preventDefault();
-    void navigate({ to: "/media/local" });
+    void navigate({
+      to: "/media/$providerId",
+      params: { providerId: "local" },
+      search: mediaSearch,
+    });
   };
 
   const handleDemoPlayerClick = (event: MouseEvent<Element>) => {
@@ -28,6 +37,7 @@ export const MediaSideNav = () => {
     void navigate({
       to: "/media/player/$sceneId",
       params: { sceneId: "374" },
+      search: mediaSearch,
     });
   };
 
@@ -39,8 +49,8 @@ export const MediaSideNav = () => {
       <SideNavSection title="Library">
         <SideNavItem
           label="Stash"
-          href="/media"
-          isSelected={pathname === "/media"}
+          href="/media/stash"
+          isSelected={pathname === "/media" || pathname === "/media/stash"}
           onClick={handleStashClick}
         />
         <SideNavItem

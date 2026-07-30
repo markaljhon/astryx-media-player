@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Navigate } from "@tanstack/react-router";
-import { AppLayout } from "@/layouts/AppLayout";
-import { getAccessMode } from "./access";
+import { AppShell } from "@astryxdesign/core";
+import { getAccessMode } from "@/features/auth/access";
 
 type ProtectedAppShellProps = {
   children: ReactNode;
@@ -16,5 +16,16 @@ export const ProtectedAppShell = ({
     return <Navigate to="/" replace />;
   }
 
-  return <AppLayout sideNav={sideNav}>{children}</AppLayout>;
+  return (
+    <AppShell
+      height="fill"
+      variant="wash"
+      contentPadding={0}
+      sideNav={sideNav}
+      mobileNav={{ breakpoint: "md" }}
+      className="safe-area"
+    >
+      {children}
+    </AppShell>
+  );
 };
