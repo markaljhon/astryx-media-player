@@ -16,6 +16,13 @@ Project-specific guidance for AI coding agents.
 - `src/themes/y2k/` contains the active Astryx theme and icon registry.
 - `scripts/` contains local maintenance tooling, including Stash scripts.
 
+## Command Execution Safety
+
+- Do not run long-lived foreground commands from Codex, including local dev servers such as `npm run dev`, `bun dev`, `vite`, or watch-mode tasks. These can block Codex from sending the final response.
+- Do not start background dev-server tasks. Prefer finite verification commands such as type checks, tests, builds, route generation, or static inspections.
+- If a persistent/background task is genuinely needed for browser/routing verification, ask the user to run it on behalf of the agent in their own terminal. Provide the exact command, expected URL/output, and what to report back.
+- Never leave a prompt turn waiting on a persistent process. Return the summary, verification status, and any manual test command the user can run.
+
 ## Video.js Reference
 
 - Use the Video.js v10 React docs index as the source of truth before changing player code: https://videojs.org/docs/framework/react/llms.txt
