@@ -47,6 +47,7 @@ import {
   VolumeSlider,
   type RenderProp,
 } from "@videojs/react";
+import { PinchZoomGesture } from "./PinchZoomGesture";
 
 const SEEK_TIME = 10;
 const CENTER_STATUS_ACTIONS = ["togglePaused"] as const;
@@ -83,6 +84,7 @@ export const DefaultVideoSkin = ({
       className={`media-minimal-skin media-minimal-skin--video ${className ?? ""}`}
       style={containerStyle}
     >
+      <PinchZoomGesture />
       {children}
 
       {poster ?
