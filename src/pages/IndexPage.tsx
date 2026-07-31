@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { AppShell, Center, TextInput, VStack } from "@astryxdesign/core";
-import {
-  getAccessModeForPassword,
-  getRouteOptionsForAccessMode,
-  setAccessMode,
-} from "@/features/auth/access";
+import { useAccess } from "@/features/auth/access";
 
 export const IndexPage = () => {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const {
+    getAccessModeForPassword,
+    getRouteOptionsForAccessMode,
+    setAccessMode,
+  } = useAccess();
 
   useEffect(() => {
     const accessMode = getAccessModeForPassword(password);
@@ -20,7 +21,13 @@ export const IndexPage = () => {
 
     setAccessMode(accessMode);
     void navigate(getRouteOptionsForAccessMode(accessMode));
-  }, [navigate, password]);
+  }, [
+    getAccessModeForPassword,
+    getRouteOptionsForAccessMode,
+    navigate,
+    password,
+    setAccessMode,
+  ]);
 
   return (
     <AppShell
