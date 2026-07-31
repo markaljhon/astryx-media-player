@@ -1,15 +1,8 @@
-import type { ComponentType, CSSProperties } from "react";
-import { createPortal } from "react-dom";
-import {
-  Dialog,
-  Icon,
-  IconButton,
-  StackItem,
-  VStack,
-} from "@astryxdesign/core";
+import type { ComponentType } from "react";
 import type { MediaItem } from "@/types/media";
-import { FlatLightboxVideoPlayer } from "../components/FlatLightboxVideoPlayer";
+import { DefaultVideoPlayer } from "../DefaultVideoPlayer";
 import { SpatialMonoVideoPlayer } from "../SpatialMonoVideoPlayer";
+import { VideoPlayerDialog } from "../components/VideoPlayerDialog";
 
 export type VideoPlayerProps = {
   item: MediaItem;
@@ -21,29 +14,6 @@ type VideoPlayerAdapter = {
   id: string;
   canPlay: (item: MediaItem) => boolean;
   Component: ComponentType<VideoPlayerProps>;
-};
-
-const spatialDialogSurfaceStyle: CSSProperties = {
-  backgroundColor: "var(--color-on-light)",
-  height: "100dvh",
-  minHeight: 0,
-  overflow: "hidden",
-  position: "relative",
-  width: "100dvw",
-};
-
-const spatialDialogCloseButtonStyle: CSSProperties = {
-  position: "absolute",
-  right: "calc(env(safe-area-inset-right) + var(--spacing-2))",
-  top: "calc(env(safe-area-inset-top) + var(--spacing-2))",
-  zIndex: 2,
-};
-
-const spatialDialogPlayerStyle: CSSProperties = {
-  height: "100dvh",
-  minHeight: 0,
-  minWidth: 0,
-  width: "100dvw",
 };
 
 const hasSpatialVideoCue = (item: MediaItem) => {
@@ -70,46 +40,48 @@ const spatialMonoVideoPlayerAdapter = ({
   isOpen,
   onOpenChange,
 }: VideoPlayerProps) => {
-  if (!item.sourceUrl || typeof document === "undefined") {
+  if (!item.sourceUrl) {
     return null;
   }
 
-  return createPortal(
-    <Dialog
+  return (
+    <VideoPlayerDialog
+      closeLabel="Close spatial video"
       isOpen={isOpen}
       onOpenChange={onOpenChange}
-      variant="fullscreen"
-      purpose="info"
-      padding={0}
     >
-      <VStack
-        height="100%"
-        gap={0}
-        padding={0}
-        style={spatialDialogSurfaceStyle}
-      >
-        <IconButton
-          label="Close spatial video"
-          icon={<Icon icon="close" color="inherit" />}
-          variant="secondary"
-          style={spatialDialogCloseButtonStyle}
-          onClick={() => onOpenChange(false)}
+      {isOpen ?
+        <SpatialMonoVideoPlayer
+          src={item.sourceUrl}
+          previewSrc={item.thumbnailUrl}
         />
-        <StackItem
-          size="fill"
-          crossAlignSelf="stretch"
-          style={spatialDialogPlayerStyle}
-        >
-          {isOpen ?
-            <SpatialMonoVideoPlayer
-              src={item.sourceUrl}
-              previewSrc={item.thumbnailUrl}
-            />
-          : null}
-        </StackItem>
-      </VStack>
-    </Dialog>,
-    document.body,
+      : null}
+    </VideoPlayerDialog>
+  );
+};
+
+const defaultVideoPlayerAdapter = ({
+  item,
+  isOpen,
+  onOpenChange,
+}: VideoPlayerProps) => {
+  if (!item.sourceUrl) {
+    return null;
+  }
+
+  return (
+    <VideoPlayerDialog
+      closeLabel="Close video"
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+    >
+      {isOpen ?
+        <DefaultVideoPlayer
+          src={item.sourceUrl}
+          previewSrc={item.thumbnailUrl}
+        />
+      : null}
+    </VideoPlayerDialog>
   );
 };
 
@@ -120,9 +92,9 @@ export const videoPlayerAdapters: VideoPlayerAdapter[] = [
     Component: spatialMonoVideoPlayerAdapter,
   },
   {
-    id: "flat-lightbox",
+    id: "flat-default",
     canPlay: (item) => item.kind === "video" && Boolean(item.sourceUrl),
-    Component: FlatLightboxVideoPlayer,
+    Component: defaultVideoPlayerAdapter,
   },
 ];
 

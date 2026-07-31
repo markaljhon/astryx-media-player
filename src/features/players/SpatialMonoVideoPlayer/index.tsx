@@ -11,7 +11,7 @@ import {
   volumeFeature,
 } from "@videojs/react";
 import { MonoVideoCanvas } from "./components/MonoVideoCanvas";
-import { defaultPlaybackRateFeature } from "./components/playbackRateFeature";
+import { defaultPlaybackRateFeature } from "../components/playbackRateFeature";
 import {
   SpatialMonoVideoSkin,
   type PlaybackRateControlMode,
