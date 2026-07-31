@@ -17,5 +17,13 @@
     "react/rules-of-hooks": "error",
     "react/only-export-components": ["warn", { "allowConstantExport": true }],
     "typescript/method-signature-style": ["error", "property"]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["src/routes/**/*.tsx"],
+      "rules": {
+        "react/only-export-components": "off"
+      }
+    }
+  ]
 }
