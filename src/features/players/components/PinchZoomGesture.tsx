@@ -1,5 +1,9 @@
 import { useContainer } from "@videojs/react";
 import { useEffect, useRef } from "react";
+import {
+  PAN_GESTURE_DELTA_EVENT,
+  type PanGestureDelta,
+} from "./PanGesture";
 
 const DEFAULT_MAX_SCALE = 3;
 const INTERACTIVE_TARGET_SELECTOR = [
@@ -30,10 +34,33 @@ type ZoomState = {
   translateY: number;
 };
 
+type ClampZoomOptions = {
+  maxScaleFloor?: number;
+};
+
+type ApplyZoomOptions = ClampZoomOptions & {
+  desiredScale?: number;
+  preserveDesiredScale?: boolean;
+};
+
 type PinchStart = {
   centroid: Point;
   distance: number;
   zoom: ZoomState;
+};
+
+type RenderedVideoMetrics = {
+  contentOffsetX: number;
+  contentOffsetY: number;
+  height: number;
+  width: number;
+};
+
+type LayoutAnchor = {
+  contentRatioX: number;
+  contentRatioY: number;
+  viewportRatioX: number;
+  viewportRatioY: number;
 };
 
 type MiddleMousePan = {
@@ -63,6 +90,8 @@ export const PinchZoomGesture = ({
     translateX: 0,
     translateY: 0,
   });
+  const desiredScaleRef = useRef(MIN_SCALE);
+  const layoutAnchorRef = useRef<LayoutAnchor | null>(null);
 
   useEffect(() => {
     if (!container || disabled) return;
@@ -105,7 +134,13 @@ export const PinchZoomGesture = ({
       };
     };
 
-    const getRenderedVideoSize = (): Point => {
+    const clampValue = (value: number, minimum: number, maximum: number) =>
+      Math.min(maximum, Math.max(minimum, value));
+
+    const normalizeScale = (scale: number) =>
+      Number.isFinite(scale) ? Math.max(MIN_SCALE, scale) : MIN_SCALE;
+
+    const getRenderedVideoMetrics = (): RenderedVideoMetrics => {
       const layoutWidth = video.clientWidth;
       const layoutHeight = video.clientHeight;
 
@@ -115,40 +150,49 @@ export const PinchZoomGesture = ({
         || video.videoWidth === 0
         || video.videoHeight === 0
       ) {
-        return { x: layoutWidth, y: layoutHeight };
+        return {
+          contentOffsetX: 0,
+          contentOffsetY: 0,
+          height: layoutHeight,
+          width: layoutWidth,
+        };
       }
 
       const fitScale = Math.min(
         layoutWidth / video.videoWidth,
         layoutHeight / video.videoHeight,
       );
+      const width = video.videoWidth * fitScale;
+      const height = video.videoHeight * fitScale;
 
       return {
-        x: video.videoWidth * fitScale,
-        y: video.videoHeight * fitScale,
+        contentOffsetX: (layoutWidth - width) / 2,
+        contentOffsetY: (layoutHeight - height) / 2,
+        height,
+        width,
       };
     };
 
-    const getMaxScale = () => {
-      const renderedVideoSize = getRenderedVideoSize();
+    const getMaxScale = (scaleFloor = MIN_SCALE) => {
+      const renderedVideoMetrics = getRenderedVideoMetrics();
 
       if (
-        renderedVideoSize.x <= 0
-        || renderedVideoSize.y <= 0
+        renderedVideoMetrics.width <= 0
+        || renderedVideoMetrics.height <= 0
         || container.clientWidth <= 0
         || container.clientHeight <= 0
       ) {
-        return configuredMaxScale;
+        return Math.max(configuredMaxScale, scaleFloor);
       }
 
       const viewportCoverScale = Math.max(
-        container.clientWidth / renderedVideoSize.x,
-        container.clientHeight / renderedVideoSize.y,
+        container.clientWidth / renderedVideoMetrics.width,
+        container.clientHeight / renderedVideoMetrics.height,
       );
 
       // Letterboxed media may need more than the configured zoom cap before
       // it can cover the player's full visual boundary.
-      return Math.max(configuredMaxScale, viewportCoverScale);
+      return Math.max(configuredMaxScale, viewportCoverScale, scaleFloor);
     };
 
     const clampAxis = (
@@ -176,11 +220,15 @@ export const PinchZoomGesture = ({
       return Math.min(maximum, Math.max(minimum, translation));
     };
 
-    const clampZoom = (zoom: ZoomState): ZoomState => {
-      const scale = Math.min(getMaxScale(), Math.max(MIN_SCALE, zoom.scale));
-      const renderedVideoSize = getRenderedVideoSize();
-      const contentOffsetX = (video.clientWidth - renderedVideoSize.x) / 2;
-      const contentOffsetY = (video.clientHeight - renderedVideoSize.y) / 2;
+    const clampZoom = (
+      zoom: ZoomState,
+      { maxScaleFloor = MIN_SCALE }: ClampZoomOptions = {},
+    ): ZoomState => {
+      const scale = Math.min(
+        getMaxScale(maxScaleFloor),
+        Math.max(MIN_SCALE, zoom.scale),
+      );
+      const renderedVideoMetrics = getRenderedVideoMetrics();
 
       return {
         scale,
@@ -189,23 +237,122 @@ export const PinchZoomGesture = ({
           scale,
           container.clientWidth,
           video.offsetLeft,
-          contentOffsetX,
-          renderedVideoSize.x,
+          renderedVideoMetrics.contentOffsetX,
+          renderedVideoMetrics.width,
         ),
         translateY: clampAxis(
           zoom.translateY,
           scale,
           container.clientHeight,
           video.offsetTop,
-          contentOffsetY,
-          renderedVideoSize.y,
+          renderedVideoMetrics.contentOffsetY,
+          renderedVideoMetrics.height,
         ),
       };
     };
 
-    const applyZoom = (nextZoom: ZoomState) => {
-      const zoom = clampZoom(nextZoom);
+    const getContainerCenter = (): Point => ({
+      x: container.clientWidth / 2,
+      y: container.clientHeight / 2,
+    });
+
+    const getLayoutAnchor = (
+      zoom: ZoomState,
+      viewportPoint = getContainerCenter(),
+    ): LayoutAnchor | null => {
+      const metrics = getRenderedVideoMetrics();
+
+      if (
+        container.clientWidth <= 0
+        || container.clientHeight <= 0
+        || metrics.width <= 0
+        || metrics.height <= 0
+        || zoom.scale <= 0
+      ) {
+        return null;
+      }
+
+      const videoLocalX =
+        (viewportPoint.x - video.offsetLeft - zoom.translateX) / zoom.scale;
+      const videoLocalY =
+        (viewportPoint.y - video.offsetTop - zoom.translateY) / zoom.scale;
+
+      return {
+        contentRatioX: clampValue(
+          (videoLocalX - metrics.contentOffsetX) / metrics.width,
+          0,
+          1,
+        ),
+        contentRatioY: clampValue(
+          (videoLocalY - metrics.contentOffsetY) / metrics.height,
+          0,
+          1,
+        ),
+        viewportRatioX: clampValue(
+          viewportPoint.x / container.clientWidth,
+          0,
+          1,
+        ),
+        viewportRatioY: clampValue(
+          viewportPoint.y / container.clientHeight,
+          0,
+          1,
+        ),
+      };
+    };
+
+    const getAnchorViewportPoint = (anchor: LayoutAnchor): Point => ({
+      x: anchor.viewportRatioX * container.clientWidth,
+      y: anchor.viewportRatioY * container.clientHeight,
+    });
+
+    const getZoomFromLayoutAnchor = (
+      anchor: LayoutAnchor,
+      scale: number,
+    ): ZoomState => {
+      const metrics = getRenderedVideoMetrics();
+      const viewportPoint = getAnchorViewportPoint(anchor);
+      const contentLocalX =
+        metrics.contentOffsetX + anchor.contentRatioX * metrics.width;
+      const contentLocalY =
+        metrics.contentOffsetY + anchor.contentRatioY * metrics.height;
+
+      return {
+        scale,
+        translateX: viewportPoint.x - video.offsetLeft - contentLocalX * scale,
+        translateY: viewportPoint.y - video.offsetTop - contentLocalY * scale,
+      };
+    };
+
+    const applyZoom = (
+      nextZoom: ZoomState,
+      anchorPoint?: Point,
+      options: ApplyZoomOptions = {},
+    ) => {
+      const desiredScale = normalizeScale(
+        options.desiredScale
+        ?? (options.preserveDesiredScale ?
+          desiredScaleRef.current
+        : nextZoom.scale),
+      );
+      const maxScaleFloor = Math.max(
+        normalizeScale(options.maxScaleFloor ?? MIN_SCALE),
+        desiredScale,
+      );
+      const requestedScale =
+        options.preserveDesiredScale ?
+          desiredScale
+        : normalizeScale(nextZoom.scale);
+      const zoom = clampZoom(
+        {
+          ...nextZoom,
+          scale: requestedScale,
+        },
+        { maxScaleFloor },
+      );
       zoomRef.current = zoom;
+      desiredScaleRef.current = desiredScale;
+      layoutAnchorRef.current = getLayoutAnchor(zoom, anchorPoint);
 
       if (
         zoom.scale === MIN_SCALE
@@ -287,13 +434,17 @@ export const PinchZoomGesture = ({
 
         const point = getContainerPoint(event);
         event.preventDefault();
-        applyZoom({
-          ...zoomRef.current,
-          translateX:
-            zoomRef.current.translateX + point.x - middleMousePan.lastPoint.x,
-          translateY:
-            zoomRef.current.translateY + point.y - middleMousePan.lastPoint.y,
-        });
+        applyZoom(
+          {
+            ...zoomRef.current,
+            translateX:
+              zoomRef.current.translateX + point.x - middleMousePan.lastPoint.x,
+            translateY:
+              zoomRef.current.translateY + point.y - middleMousePan.lastPoint.y,
+          },
+          getContainerCenter(),
+          { preserveDesiredScale: true },
+        );
         middleMousePan.lastPoint = point;
         return;
       }
@@ -313,7 +464,7 @@ export const PinchZoomGesture = ({
       event.preventDefault();
       const centroid = getCentroid(...pair);
       const scale = Math.min(
-        getMaxScale(),
+        getMaxScale(pinchStart.zoom.scale),
         Math.max(
           MIN_SCALE,
           pinchStart.zoom.scale * (getDistance(...pair) / pinchStart.distance),
@@ -321,23 +472,30 @@ export const PinchZoomGesture = ({
       );
       const scaleChange = scale / pinchStart.zoom.scale;
 
-      applyZoom({
-        scale,
-        translateX:
-          centroid.x
-          - video.offsetLeft
-          - (pinchStart.centroid.x
+      applyZoom(
+        {
+          scale,
+          translateX:
+            centroid.x
             - video.offsetLeft
-            - pinchStart.zoom.translateX)
-            * scaleChange,
-        translateY:
-          centroid.y
-          - video.offsetTop
-          - (pinchStart.centroid.y
+            - (pinchStart.centroid.x
+              - video.offsetLeft
+              - pinchStart.zoom.translateX)
+              * scaleChange,
+          translateY:
+            centroid.y
             - video.offsetTop
-            - pinchStart.zoom.translateY)
-            * scaleChange,
-      });
+            - (pinchStart.centroid.y
+              - video.offsetTop
+              - pinchStart.zoom.translateY)
+              * scaleChange,
+        },
+        centroid,
+        {
+          desiredScale: scale,
+          maxScaleFloor: pinchStart.zoom.scale,
+        },
+      );
     };
 
     const handlePointerEnd = (event: PointerEvent) => {
@@ -378,7 +536,7 @@ export const PinchZoomGesture = ({
         : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? container.clientHeight
         : 1;
       const scale = Math.min(
-        getMaxScale(),
+        getMaxScale(zoomRef.current.scale),
         Math.max(
           MIN_SCALE,
           zoomRef.current.scale
@@ -390,29 +548,73 @@ export const PinchZoomGesture = ({
       const scaleChange = scale / zoomRef.current.scale;
       const focalPoint = getContainerPoint(event);
 
-      applyZoom({
-        scale,
-        translateX:
-          focalPoint.x
-          - video.offsetLeft
-          - (focalPoint.x - video.offsetLeft - zoomRef.current.translateX)
-            * scaleChange,
-        translateY:
-          focalPoint.y
-          - video.offsetTop
-          - (focalPoint.y - video.offsetTop - zoomRef.current.translateY)
-            * scaleChange,
-      });
+      applyZoom(
+        {
+          scale,
+          translateX:
+            focalPoint.x
+            - video.offsetLeft
+            - (focalPoint.x - video.offsetLeft - zoomRef.current.translateX)
+              * scaleChange,
+          translateY:
+            focalPoint.y
+            - video.offsetTop
+            - (focalPoint.y - video.offsetTop - zoomRef.current.translateY)
+              * scaleChange,
+        },
+        focalPoint,
+        {
+          desiredScale: scale,
+          maxScaleFloor: zoomRef.current.scale,
+        },
+      );
     };
 
     const handleAuxClick = (event: MouseEvent) => {
       if (event.button === MIDDLE_MOUSE_BUTTON) event.preventDefault();
     };
 
-    const handleLayoutChange = () => applyZoom(zoomRef.current);
+    const handlePanDelta = (event: Event) => {
+      const { deltaX, deltaY } = (event as CustomEvent<PanGestureDelta>).detail;
+
+      applyZoom(
+        {
+          ...zoomRef.current,
+          translateX: zoomRef.current.translateX + deltaX,
+          translateY: zoomRef.current.translateY + deltaY,
+        },
+        getContainerCenter(),
+        { preserveDesiredScale: true },
+      );
+    };
+
+    const handleLayoutChange = () => {
+      const anchor =
+        layoutAnchorRef.current
+        ?? getLayoutAnchor(zoomRef.current, getContainerCenter());
+
+      if (!anchor) {
+        applyZoom(
+          {
+            ...zoomRef.current,
+            scale: desiredScaleRef.current,
+          },
+          undefined,
+          { preserveDesiredScale: true },
+        );
+        return;
+      }
+
+      applyZoom(
+        getZoomFromLayoutAnchor(anchor, desiredScaleRef.current),
+        getAnchorViewportPoint(anchor),
+        { preserveDesiredScale: true },
+      );
+    };
     const resizeObserver = new ResizeObserver(handleLayoutChange);
     resizeObserver.observe(container);
     video.addEventListener("loadedmetadata", handleLayoutChange);
+    container.addEventListener(PAN_GESTURE_DELTA_EVENT, handlePanDelta);
     container.addEventListener("pointerdown", handlePointerDown, {
       passive: false,
     });
@@ -434,6 +636,7 @@ export const PinchZoomGesture = ({
     return () => {
       resizeObserver.disconnect();
       video.removeEventListener("loadedmetadata", handleLayoutChange);
+      container.removeEventListener(PAN_GESTURE_DELTA_EVENT, handlePanDelta);
       container.removeEventListener("pointerdown", handlePointerDown);
       container.removeEventListener("pointermove", handlePointerMove);
       container.removeEventListener("pointerup", handlePointerEnd);
@@ -450,6 +653,8 @@ export const PinchZoomGesture = ({
         translateX: 0,
         translateY: 0,
       };
+      desiredScaleRef.current = MIN_SCALE;
+      layoutAnchorRef.current = null;
     };
   }, [container, disabled, maxScale]);
 

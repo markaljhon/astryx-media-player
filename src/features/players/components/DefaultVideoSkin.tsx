@@ -47,6 +47,7 @@ import {
   VolumeSlider,
   type RenderProp,
 } from "@videojs/react";
+import { PanGesture } from "./PanGesture";
 import { PinchZoomGesture } from "./PinchZoomGesture";
 
 const SEEK_TIME = 10;
@@ -85,6 +86,7 @@ export const DefaultVideoSkin = ({
       style={containerStyle}
     >
       <PinchZoomGesture />
+      <PanGesture />
       {children}
 
       {poster ?
