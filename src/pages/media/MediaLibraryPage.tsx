@@ -94,7 +94,7 @@ const getUniqueTagNames = (tags: MediaTagToken[]) => {
   return [...uniqueTagNames.values()];
 };
 
-export const MediaLibraryPage = (props: { providerId?: string }) => {
+export const MediaLibraryPage = (props: { providerId: string }) => {
   const [items, setItems] = useState<MediaItem[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [tagCatalog, setTagCatalog] = useState<MediaTagToken[]>([]);
@@ -139,6 +139,8 @@ export const MediaLibraryPage = (props: { providerId?: string }) => {
 
   const updateSearch = (nextSearch: Partial<MediaLibrarySearch>) => {
     void navigate({
+      to: "/media/$providerId",
+      params: { providerId: props.providerId },
       replace: true,
       search: (currentSearch) => ({
         ...currentSearch,
