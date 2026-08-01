@@ -12,7 +12,8 @@ Project-specific guidance for AI coding agents.
 - `src/features/media/api/` contains the media API facade, provider registry, shared media types, and provider adapters under `api/adapters/`.
 - `src/features/media/components/` contains media search, gallery cards, and loading states.
 - `src/features/players/api/` contains player adapter selection and player-facing contracts.
-- `src/features/players/components/` contains general player surfaces. Keep dedicated spatial-player internals in `src/features/players/SpatialMonoVideoPlayer/`.
+- `src/features/players/DefaultVideoPlayer/` contains the conventional flat-video player entry point.
+- `src/features/players/components/` contains shared player controls, dialogs, features, and gestures. Keep dedicated spatial-player internals in `src/features/players/SpatialMonoVideoPlayer/`.
 - `src/themes/y2k/` contains the active Astryx theme and icon registry.
 - `scripts/` contains local maintenance tooling, including Stash scripts.
 
@@ -30,6 +31,8 @@ Project-specific guidance for AI coding agents.
 - This project uses `@videojs/react`, not the legacy v8 `video.js` player API. Prefer the v10 React model: `createPlayer({ features })` creates `Player.Provider`, `Player.Container`, typed hooks, and the player store boundary.
 - For video players, start from the `@videojs/react/video` preset docs (`Video`, `videoFeatures`, skins such as `MinimalVideoSkin`) unless a custom feature set is already established in the surrounding code.
 - When editing custom controls, hooks, media attachment, or features, consult the matching docs from the index first (`ui-components`, `create-player`, `use-player`, `use-media-attach`, feature references, and component references).
+- `DefaultVideoSkin` composes `PinchZoomGesture` for flat video. Preserve two-finger touch pinch/pan, pointer-focused wheel zoom, and middle-mouse panning; interactive controls must not trigger zoom or pan.
+- Keep zoom bounded to the visible video area. The configured maximum is a floor for the cap: letterboxed media may zoom farther when necessary to cover the player viewport.
 - Use arrow-function constants for all JavaScript and TypeScript functions, including React components, helpers, callbacks, and script entry points. TypeScript function contracts should use property signatures such as `run: () => void`.
 - Keep custom SpatialMonoVideoPlayer React components and local helper functions as arrow-function constants.
 

@@ -6,6 +6,7 @@ The current app includes:
 
 - a search bar for finding media
 - a gallery of mostly video media
+- a standalone protected gallery prototype with footer navigation
 - flat and spatial video player surfaces
 - provider adapters for local sample media and Stash media
 
@@ -39,6 +40,7 @@ src/
     ProtectedAppShell.tsx
   routes/
     __root.tsx
+    gallery.index.tsx
     index.tsx
     media.tsx
     media.$providerId.tsx
@@ -54,6 +56,7 @@ src/
       routing/
     players/
       api/
+      DefaultVideoPlayer/
       components/
       SpatialMonoVideoPlayer/
   themes/
@@ -66,7 +69,7 @@ scripts/
 ### Where Things Go
 
 - `layouts/` for protected route layout wrappers and section navigation
-- `routes/` for TanStack file-based route modules only
+- `routes/` for TanStack file-based route modules only, including the standalone `/gallery` prototype
 - `features/auth/` for access-mode session state and password routing helpers
 - `pages/media/` for the media library route-level screen
 - `features/media/api/` for provider registry, media API facade, and shared media types
@@ -74,7 +77,8 @@ scripts/
 - `features/media/components/` for search, gallery cards, and media loading states
 - `features/media/routing/` for media route search-param validation and defaults
 - `features/players/api/` for player adapter selection and player-facing contracts
-- `features/players/components/` for general player surfaces such as the flat lightbox player
+- `features/players/DefaultVideoPlayer/` for the conventional flat-video player entry point
+- `features/players/components/` for shared player controls, dialogs, features, and gestures
 - `features/players/SpatialMonoVideoPlayer/` for the dedicated React Three Fiber spatial player and its feature-specific components
 - `themes/y2k/` for the active Astryx theme and icon registry
 - `public/` for static browser assets such as the favicon and web manifest
@@ -102,6 +106,8 @@ This project uses TanStack Router file-based routing through
 - `src/routes/__root.tsx` owns the root route and renders only `<Outlet />`.
 - `src/routes/media.tsx` owns the media layout route, protected app shell, media
   side nav, and shared media search-param validation.
+- `src/routes/gallery.index.tsx` owns the protected standalone gallery prototype,
+  including its search field and footer navigation.
 - Leaf route modules such as `src/routes/media.$providerId.tsx` and
   `src/routes/media.player.$sceneId.tsx` should stay small and delegate UI to
   pages or feature components.
@@ -126,10 +132,25 @@ Current routes:
 
 ```txt
 /                    password entry
+/gallery             standalone protected gallery prototype
 /media               Stash media library
 /media/$providerId   provider-backed media library, for example stash or local
 /media/player/$sceneId spatial Stash scene player
 ```
+
+## Flat video controls
+
+The conventional flat-video player uses the custom `DefaultVideoSkin`. In
+addition to its playback, seek, volume, and playback-rate controls, the video
+supports:
+
+- two-finger pinch and pan on touch devices
+- pointer-focused mouse-wheel or trackpad zoom
+- middle-mouse drag to pan while zoomed
+
+Zoom and pan ignore interactive controls and stay bounded to the visible video
+area. Letterboxed video can zoom beyond the configured cap when needed to cover
+the player viewport.
 
 ## Code Style
 
@@ -170,3 +191,7 @@ Do not put the Stash API key in a `VITE_` variable. Vite exposes `VITE_`
 variables to the browser, while `STASH_API_KEY` is only read by the local dev
 server proxy. The Vite proxy can fall back to older `VITE_STASH_*` values during
 migration, but the app no longer reads the API key from client code.
+
+The `local` provider contains bundled catalog entries for development,
+including the Mux-hosted `highest.mp4` flat-video sample used to exercise the
+default player.
