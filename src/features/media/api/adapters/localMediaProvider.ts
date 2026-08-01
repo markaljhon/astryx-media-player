@@ -1,7 +1,4 @@
-import type {
-  MediaListRequest,
-  MediaProviderAdapter,
-} from "@/types/api";
+import type { MediaListRequest, MediaProviderAdapter } from "@/types/api";
 import type { MediaItem, MediaTag } from "@/types/media";
 
 const localMediaCatalog: MediaItem[] = [
@@ -32,6 +29,20 @@ const localMediaCatalog: MediaItem[] = [
     stereoLayout: "side-by-side",
     durationMs: 105820,
     tags: ["VR"],
+  },
+  {
+    id: "videojs",
+    title: "highest.mp4",
+    kind: "video",
+    providerId: "local",
+    description: "",
+    thumbnailUrl:
+      "https://image.mux.com/BV3YZtogl89mg9VcNBhhnHm02Y34zI1nlMuMQfAbl3dM/thumbnail.webp",
+    previewVideoUrl:
+      "https://stream.mux.com/BV3YZtogl89mg9VcNBhhnHm02Y34zI1nlMuMQfAbl3dM/highest.mp4",
+    sourceUrl:
+      "https://stream.mux.com/BV3YZtogl89mg9VcNBhhnHm02Y34zI1nlMuMQfAbl3dM/highest.mp4",
+    durationMs: 35000,
   },
 ];
 
