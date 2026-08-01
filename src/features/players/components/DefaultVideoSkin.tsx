@@ -81,7 +81,7 @@ export const DefaultVideoSkin = ({
 
   return (
     <Container
-      className={`media-minimal-skin media-minimal-skin--video ${className ?? ""}`}
+      className={`default-video-skin media-minimal-skin media-minimal-skin--video ${className ?? ""}`}
       style={containerStyle}
     >
       <PinchZoomGesture />

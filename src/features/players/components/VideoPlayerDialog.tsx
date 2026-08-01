@@ -56,16 +56,11 @@ export const VideoPlayerDialog = ({
       purpose="info"
       padding={0}
     >
-      <VStack
-        height="100%"
-        gap={0}
-        padding={0}
-        style={videoDialogSurfaceStyle}
-      >
+      <VStack height="100%" gap={0} padding={0} style={videoDialogSurfaceStyle}>
         <IconButton
           label={closeLabel}
-          icon={<Icon icon="close" color="inherit" />}
-          variant="secondary"
+          icon={<Icon icon="chevronLeft" color="inherit" />}
+          variant="ghost"
           style={videoDialogCloseButtonStyle}
           onClick={() => onOpenChange(false)}
         />
