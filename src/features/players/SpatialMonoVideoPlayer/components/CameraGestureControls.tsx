@@ -1,8 +1,9 @@
 import { useThree } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
+import { type MutableRefObject, useEffect, useRef } from "react";
 import { MathUtils, PerspectiveCamera } from "three";
 
 export const DEFAULT_CAMERA_FOV = 100;
+export const DEFAULT_CAMERA_HEIGHT = 0;
 
 const MIN_CAMERA_FOV = 20;
 const MAX_CAMERA_FOV = 140;
@@ -22,6 +23,11 @@ type PointerPosition = {
 type PinchState = {
   distance: number;
   fov: number;
+};
+
+type CameraGestureControlsProps = {
+  heightGesturePointerRef: MutableRefObject<number | null>;
+  resetKey: string;
 };
 
 const clamp = (value: number, min: number, max: number) => {
@@ -45,7 +51,10 @@ const getPointerDistance = (
   );
 };
 
-export const CameraGestureControls = ({ resetKey }: { resetKey: string }) => {
+export const CameraGestureControls = ({
+  heightGesturePointerRef,
+  resetKey,
+}: CameraGestureControlsProps) => {
   const { camera, gl } = useThree();
   const pointersRef = useRef(new Map<number, PointerPosition>());
   const lastRotationPointerRef = useRef<PointerPosition | null>(null);
@@ -62,7 +71,7 @@ export const CameraGestureControls = ({ resetKey }: { resetKey: string }) => {
       return;
     }
 
-    perspectiveCamera.position.set(0, 0, 0);
+    perspectiveCamera.position.set(0, DEFAULT_CAMERA_HEIGHT, 0);
     perspectiveCamera.rotation.order = "YXZ";
     perspectiveCamera.rotation.set(
       DEFAULT_CAMERA_PITCH,
@@ -78,9 +87,10 @@ export const CameraGestureControls = ({ resetKey }: { resetKey: string }) => {
       yaw: DEFAULT_CAMERA_YAW,
     };
     pointersRef.current.clear();
+    heightGesturePointerRef.current = null;
     lastRotationPointerRef.current = null;
     pinchRef.current = null;
-  }, [camera, resetKey]);
+  }, [camera, heightGesturePointerRef, resetKey]);
 
   useEffect(() => {
     const perspectiveCamera = camera;
@@ -121,6 +131,10 @@ export const CameraGestureControls = ({ resetKey }: { resetKey: string }) => {
     };
 
     const handlePointerDown = (event: PointerEvent) => {
+      if (heightGesturePointerRef.current === event.pointerId) {
+        return;
+      }
+
       event.preventDefault();
       canvas.setPointerCapture(event.pointerId);
       pointersRef.current.set(event.pointerId, getPointerPosition(event));
@@ -135,6 +149,10 @@ export const CameraGestureControls = ({ resetKey }: { resetKey: string }) => {
     };
 
     const handlePointerMove = (event: PointerEvent) => {
+      if (heightGesturePointerRef.current === event.pointerId) {
+        return;
+      }
+
       if (!pointersRef.current.has(event.pointerId)) {
         return;
       }
@@ -189,6 +207,20 @@ export const CameraGestureControls = ({ resetKey }: { resetKey: string }) => {
     };
 
     const handlePointerEnd = (event: PointerEvent) => {
+      if (heightGesturePointerRef.current === event.pointerId) {
+        pointersRef.current.delete(event.pointerId);
+
+        if (canvas.hasPointerCapture(event.pointerId)) {
+          canvas.releasePointerCapture(event.pointerId);
+        }
+
+        if (pointersRef.current.size === 0) {
+          continueSinglePointerRotation(null);
+        }
+
+        return;
+      }
+
       pointersRef.current.delete(event.pointerId);
 
       if (canvas.hasPointerCapture(event.pointerId)) {
@@ -233,7 +265,7 @@ export const CameraGestureControls = ({ resetKey }: { resetKey: string }) => {
       canvas.removeEventListener("lostpointercapture", handlePointerEnd);
       canvas.removeEventListener("wheel", handleWheel);
     };
-  }, [camera, gl]);
+  }, [camera, gl, heightGesturePointerRef]);
 
   return null;
 };

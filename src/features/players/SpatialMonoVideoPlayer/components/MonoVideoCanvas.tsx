@@ -1,6 +1,7 @@
 import { Canvas } from "@react-three/fiber";
-import type { ReactNode } from "react";
+import { type ReactNode, useRef } from "react";
 import { MathUtils } from "three";
+import { CameraHeightDragGesture } from "./CameraHeightDragGesture";
 import {
   CameraGestureControls,
   DEFAULT_CAMERA_FOV,
@@ -12,6 +13,8 @@ type MonoVideoCanvasProps = {
 };
 
 export const MonoVideoCanvas = (props: MonoVideoCanvasProps) => {
+  const heightGesturePointerRef = useRef<number | null>(null);
+
   return (
     <Canvas
       className="spatial-mono-video-canvas"
@@ -23,7 +26,13 @@ export const MonoVideoCanvas = (props: MonoVideoCanvasProps) => {
       }}
       resize={{ offsetSize: true }}
     >
-      <CameraGestureControls resetKey={props.url} />
+      <CameraGestureControls
+        heightGesturePointerRef={heightGesturePointerRef}
+        resetKey={props.url}
+      />
+      <CameraHeightDragGesture
+        heightGesturePointerRef={heightGesturePointerRef}
+      />
       <MonoVideoScene>
         <SpatialVideoMaterial url={props.url} />
       </MonoVideoScene>
