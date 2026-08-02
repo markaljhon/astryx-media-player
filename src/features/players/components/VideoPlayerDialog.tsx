@@ -26,8 +26,8 @@ const videoDialogSurfaceStyle: CSSProperties = {
 
 const videoDialogCloseButtonStyle: CSSProperties = {
   position: "absolute",
-  right: "calc(env(safe-area-inset-right) + var(--spacing-2))",
-  top: "calc(env(safe-area-inset-top) + var(--spacing-2))",
+  right: "calc(env(safe-area-inset-right) + var(--spacing-3))",
+  top: "calc(env(safe-area-inset-top) + var(--spacing-3))",
   zIndex: 2,
 };
 
@@ -61,6 +61,7 @@ export const VideoPlayerDialog = ({
           label={closeLabel}
           icon={<Icon icon="chevronLeft" color="inherit" />}
           variant="ghost"
+          size="lg"
           style={videoDialogCloseButtonStyle}
           onClick={() => onOpenChange(false)}
         />

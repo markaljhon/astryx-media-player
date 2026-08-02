@@ -1,66 +1,75 @@
 import { defineTheme, defineSyntaxTheme } from "@astryxdesign/core/theme";
 import { neutralTheme } from "@astryxdesign/theme-neutral";
 
-const astryxDark = "#141414";
-const astryxLight = "#CFCFCF";
-const astryxAccent = "#7E49B3";
+const astryxLightText = "#141414";
+const astryxLightSurface = "#CFCFCF";
+const astryxLightAccent = "#7E49B3";
+
+const astryxDarkBody = "#000000";
+const astryxDarkSurface = "#080808";
+const astryxDarkCard = "#101010";
+const astryxDarkPopover = "#181818";
+const astryxDarkText = "#F7F7F7";
+const astryxDarkTextSecondary = "#D4D4D4";
+const astryxDarkTextDisabled = "#8A8A8A";
+const astryxDarkAccent = "#C084FC";
 
 const astryxSyntax = defineSyntaxTheme({
   name: "xds-astryx",
   tokens: {
-    keyword: [astryxAccent, "#B98AE7"],
+    keyword: [astryxLightAccent, astryxDarkAccent],
     string: ["#4B6F44", "#A8D39D"],
-    comment: ["#6F6F6F", "#8F8F8F"],
+    comment: ["#6F6F6F", "#A3A3A3"],
     number: ["#6A4F88", "#C39AF0"],
-    function: [astryxAccent, "#B98AE7"],
+    function: [astryxLightAccent, astryxDarkAccent],
     type: ["#5B3B7A", "#D1AAFA"],
-    variable: [astryxDark, astryxLight],
-    operator: [astryxDark, astryxLight],
-    constant: [astryxAccent, "#B98AE7"],
-    tag: [astryxAccent, "#B98AE7"],
+    variable: [astryxLightText, astryxDarkText],
+    operator: [astryxLightText, astryxDarkText],
+    constant: [astryxLightAccent, astryxDarkAccent],
+    tag: [astryxLightAccent, astryxDarkAccent],
     attribute: ["#5B3B7A", "#D1AAFA"],
     property: ["#5B3B7A", "#D1AAFA"],
-    punctuation: [astryxDark, astryxLight],
-    background: [astryxLight, astryxDark],
+    punctuation: [astryxLightText, astryxDarkText],
+    background: [astryxLightSurface, astryxDarkBody],
   },
 });
 
 export const astryxTheme = defineTheme({
   name: "astryx",
   extends: neutralTheme,
-  color: { accent: astryxAccent, neutralStyle: "neutral" },
+  color: { accent: astryxLightAccent, neutralStyle: "neutral" },
   radius: { base: 4, multiplier: 0 },
   syntax: astryxSyntax,
   tokens: {
-    "--color-accent": [astryxAccent, astryxAccent],
-    "--color-accent-muted": [`${astryxAccent}24`, `${astryxAccent}3F`],
-    "--color-neutral": [`${astryxDark}14`, `${astryxLight}1F`],
-    "--color-background-body": [astryxLight, astryxDark],
-    "--color-background-surface": ["#E7E7E7", "#1D1D1D"],
-    "--color-background-card": ["#E7E7E7", "#1D1D1D"],
-    "--color-background-popover": ["#F2F2F2", "#242424"],
-    "--color-background-muted": [`${astryxDark}0D`, `${astryxLight}14`],
-    "--color-background-inverted": [astryxDark, astryxLight],
-    "--color-overlay": [`${astryxDark}66`, "#00000099"],
-    "--color-overlay-hover": [`${astryxDark}0D`, `${astryxLight}0F`],
-    "--color-overlay-pressed": [`${astryxDark}1A`, `${astryxLight}1F`],
-    "--color-text-primary": [astryxDark, astryxLight],
-    "--color-text-secondary": ["#4A4A4A", "#A8A8A8"],
-    "--color-text-disabled": ["#7A7A7A", "#6F6F6F"],
-    "--color-text-accent": [astryxAccent, "#B98AE7"],
-    "--color-on-dark": astryxLight,
-    "--color-on-light": astryxDark,
+    "--color-accent": [astryxLightAccent, astryxDarkAccent],
+    "--color-accent-muted": [`${astryxLightAccent}24`, `${astryxDarkAccent}45`],
+    "--color-neutral": [`${astryxLightText}14`, `${astryxDarkText}24`],
+    "--color-background-body": [astryxLightSurface, astryxDarkBody],
+    "--color-background-surface": ["#E7E7E7", astryxDarkSurface],
+    "--color-background-card": ["#E7E7E7", astryxDarkCard],
+    "--color-background-popover": ["#F2F2F2", astryxDarkPopover],
+    "--color-background-muted": [`${astryxLightText}0D`, `${astryxDarkText}1A`],
+    "--color-background-inverted": [astryxLightText, astryxDarkText],
+    "--color-overlay": [`${astryxLightText}66`, "#000000CC"],
+    "--color-overlay-hover": [`${astryxLightText}0D`, `${astryxDarkText}14`],
+    "--color-overlay-pressed": [`${astryxLightText}1A`, `${astryxDarkText}29`],
+    "--color-text-primary": [astryxLightText, astryxDarkText],
+    "--color-text-secondary": ["#4A4A4A", astryxDarkTextSecondary],
+    "--color-text-disabled": ["#7A7A7A", astryxDarkTextDisabled],
+    "--color-text-accent": [astryxLightAccent, "#D8B4FE"],
+    "--color-on-dark": "#FFFFFF",
+    "--color-on-light": "#000000",
     "--color-on-accent": ["#FFFFFF", "#FFFFFF"],
-    "--color-icon-accent": [astryxAccent, "#B98AE7"],
-    "--color-icon-primary": [astryxDark, astryxLight],
-    "--color-icon-secondary": ["#4A4A4A", "#A8A8A8"],
-    "--color-icon-disabled": ["#7A7A7A", "#6F6F6F"],
-    "--color-border": [`${astryxDark}24`, `${astryxLight}24`],
-    "--color-border-emphasized": ["#6F6F6F", "#7A7A7A"],
-    "--color-skeleton": ["#B8B8B8", "#3A3A3A"],
-    "--color-track": ["#B8B8B8", "#3A3A3A"],
-    "--color-shadow": [`${astryxDark}1F`, "#00000066"],
-    "--color-tint-hover": [astryxDark, astryxLight],
+    "--color-icon-accent": [astryxLightAccent, astryxDarkAccent],
+    "--color-icon-primary": [astryxLightText, astryxDarkText],
+    "--color-icon-secondary": ["#4A4A4A", astryxDarkTextSecondary],
+    "--color-icon-disabled": ["#7A7A7A", astryxDarkTextDisabled],
+    "--color-border": [`${astryxLightText}24`, `${astryxDarkText}3D`],
+    "--color-border-emphasized": ["#6F6F6F", "#B8B8B8"],
+    "--color-skeleton": ["#B8B8B8", "#4A4A4A"],
+    "--color-track": ["#B8B8B8", "#4A4A4A"],
+    "--color-shadow": [`${astryxLightText}1F`, "#000000D9"],
+    "--color-tint-hover": [astryxLightText, astryxDarkText],
     "--radius-none": "0px",
     "--radius-inner": "0px",
     "--radius-element": "0px",
@@ -68,7 +77,10 @@ export const astryxTheme = defineTheme({
     "--radius-page": "0px",
     "--radius-chat": "0px",
     "--radius-full": "0px",
-    "--shadow-inset-selected": `inset 0px 0px 0px 2px ${astryxAccent}80`,
+    "--shadow-inset-selected": [
+      `inset 0px 0px 0px 2px ${astryxLightAccent}80`,
+      `inset 0px 0px 0px 2px ${astryxDarkAccent}99`,
+    ],
   },
   components: {
     button: {
