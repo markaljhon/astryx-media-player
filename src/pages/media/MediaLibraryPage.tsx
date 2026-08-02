@@ -264,6 +264,7 @@ export const MediaLibraryPage = (props: { providerId: string }) => {
 
         <Tokenizer
           label="Tags"
+          size="lg"
           value={selectedTags}
           onChange={handleTagsChange}
           searchSource={tagSearchSource}

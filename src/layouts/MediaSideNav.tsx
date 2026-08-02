@@ -6,6 +6,7 @@ import {
   SideNavItem,
   SideNavSection,
 } from "@astryxdesign/core/SideNav";
+import { ThemeToggleIconButton } from "@/features/theme/ThemeToggleIconButton";
 
 export const MediaSideNav = () => {
   const navigate = useNavigate();
@@ -43,7 +44,12 @@ export const MediaSideNav = () => {
 
   return (
     <SideNav
-      header={<SideNavHeading heading="Astryx Media Library" />}
+      header={
+        <SideNavHeading
+          heading="Astryx Media Library"
+          headerEndContent={<ThemeToggleIconButton />}
+        />
+      }
       collapsible={true}
     >
       <SideNavSection title="Library">

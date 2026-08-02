@@ -53,12 +53,14 @@ export const MediaGalleryCard = ({ item, onPlay }: MediaGalleryCardProps) => {
   const previewVideoRef = useRef<HTMLVideoElement>(null);
   const [isPreviewActive, setIsPreviewActive] = useState(false);
   const previewAudioUrl =
-    item.previewAudioUrl ?? (item.kind === "audio" ? item.sourceUrl : undefined);
+    item.previewAudioUrl
+    ?? (item.kind === "audio" ? item.sourceUrl : undefined);
   const hasPreviewVideo = Boolean(item.previewVideoUrl);
   const hasPreviewAudio = Boolean(previewAudioUrl);
   const hasPreviewMedia = hasPreviewVideo || hasPreviewAudio;
   const showPreviewVideo = hasPreviewVideo && isPreviewActive;
-  const showPreviewAudio = !showPreviewVideo && hasPreviewAudio && isPreviewActive;
+  const showPreviewAudio =
+    !showPreviewVideo && hasPreviewAudio && isPreviewActive;
   const canPlay = item.kind === "video" && Boolean(item.sourceUrl) && onPlay;
 
   useEffect(() => {
@@ -82,8 +84,8 @@ export const MediaGalleryCard = ({ item, onPlay }: MediaGalleryCardProps) => {
 
     const handleDocumentPointerDown = (event: PointerEvent) => {
       if (
-        event.target instanceof Node &&
-        !previewRef.current?.contains(event.target)
+        event.target instanceof Node
+        && !previewRef.current?.contains(event.target)
       ) {
         setIsPreviewActive(false);
       }
@@ -137,43 +139,41 @@ export const MediaGalleryCard = ({ item, onPlay }: MediaGalleryCardProps) => {
     onPlay?.(item);
   };
 
-  const previewContent = showPreviewVideo ? (
-    <video
-      ref={previewVideoRef}
-      src={item.previewVideoUrl}
-      poster={item.thumbnailUrl}
-      aria-label={`${item.title} preview`}
-      autoPlay
-      loop
-      playsInline
-      preload="metadata"
-    />
-  ) : showPreviewAudio ? (
-    <Section variant="muted" padding={3} height="100%">
-      <Center width="100%" height="100%">
-        <VStack gap={2} align="center">
+  const previewContent =
+    showPreviewVideo ?
+      <video
+        ref={previewVideoRef}
+        src={item.previewVideoUrl}
+        poster={item.thumbnailUrl}
+        aria-label={`${item.title} preview`}
+        autoPlay
+        loop
+        playsInline
+        preload="metadata"
+      />
+    : showPreviewAudio ?
+      <Section variant="muted" padding={3} height="100%">
+        <Center width="100%" height="100%">
+          <VStack gap={2} align="center">
+            <Token color={getKindTokenColor(item.kind)} label={item.kind} />
+            <audio
+              ref={previewAudioRef}
+              src={previewAudioUrl}
+              aria-label={`${item.title} preview`}
+              autoPlay
+              controls
+              loop
+              preload="metadata"
+            />
+          </VStack>
+        </Center>
+      </Section>
+    : item.thumbnailUrl ? <img src={item.thumbnailUrl} alt={item.title} />
+    : <Section variant="muted" padding={3} height="100%">
+        <Center width="100%" height="100%">
           <Token color={getKindTokenColor(item.kind)} label={item.kind} />
-          <audio
-            ref={previewAudioRef}
-            src={previewAudioUrl}
-            aria-label={`${item.title} preview`}
-            autoPlay
-            controls
-            loop
-            preload="metadata"
-          />
-        </VStack>
-      </Center>
-    </Section>
-  ) : item.thumbnailUrl ? (
-    <img src={item.thumbnailUrl} alt={item.title} />
-  ) : (
-    <Section variant="muted" padding={3} height="100%">
-      <Center width="100%" height="100%">
-        <Token color={getKindTokenColor(item.kind)} label={item.kind} />
-      </Center>
-    </Section>
-  );
+        </Center>
+      </Section>;
 
   return (
     <Card padding={0}>
@@ -215,27 +215,28 @@ export const MediaGalleryCard = ({ item, onPlay }: MediaGalleryCardProps) => {
           <Text type="supporting" color="secondary">
             {item.providerId} · {formatDuration(item.durationMs)}
           </Text>
-          {item.description ? (
+          {item.description ?
             <Text type="supporting" color="secondary" maxLines={2}>
               {item.description}
             </Text>
-          ) : null}
-          {item.tags && item.tags.length > 0 ? (
+          : null}
+          {item.tags && item.tags.length > 0 ?
             <HStack gap={1} wrap="wrap">
               {item.tags.slice(0, 3).map((tag) => (
                 <Token key={tag} color="gray" label={tag} />
               ))}
             </HStack>
-          ) : null}
-          {canPlay ? (
+          : null}
+          {canPlay ?
             <HStack>
               <Button
                 label="Play video"
                 variant="secondary"
+                size="lg"
                 onClick={playItem}
               />
             </HStack>
-          ) : null}
+          : null}
         </VStack>
       </VStack>
     </Card>
