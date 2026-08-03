@@ -15,6 +15,7 @@ import {
   type StashGraphQlOperation,
 } from "./stash/graphqlClient";
 import {
+  findMediaSceneOperation,
   findMediaScenesOperation,
   findTagsOperation,
   type StashMediaScene,
@@ -337,6 +338,15 @@ const fetchScenes = async (
   };
 };
 
+const fetchScene = async (sceneId: string) => {
+  const { endpoint, data } = await executeStashGraphQl(findMediaSceneOperation, {
+    id: sceneId,
+  });
+  const scene = data?.findScene;
+
+  return scene ? mapScene(scene, endpoint) : null;
+};
+
 export const stashMediaProvider: MediaProviderAdapter = {
   id: "stash",
   listMedia: async (request: MediaListRequest) => {
@@ -357,6 +367,9 @@ export const stashMediaProvider: MediaProviderAdapter = {
       pageSize,
       totalItems,
     };
+  },
+  getMediaItem: async (request) => {
+    return fetchScene(request.id);
   },
   searchTags: async (request: MediaTagSearchRequest) => {
     return fetchTags(request);

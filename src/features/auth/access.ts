@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useSyncExternalStore } from "react";
+import { defaultMediaProviderId } from "@/features/media/api/mediaApi";
 import { mediaSearchDefaults } from "@/features/media/routing/mediaSearch";
 
 export type AccessMode = "gal" | "dev" | "local" | "stash";
@@ -6,16 +7,26 @@ export type AccessMode = "gal" | "dev" | "local" | "stash";
 const accessModeStorageKey = "astryx-media-player:access-mode";
 const accessModeChangedEvent = "astryx-media-player:access-mode-changed";
 
+const gallerySearchDefaults = {
+  ...mediaSearchDefaults,
+  providerId: defaultMediaProviderId,
+};
+
+const demoPlayerSearchDefaults = {
+  ...mediaSearchDefaults,
+  providerId: "stash",
+};
+
 const accessModeRouteOptions = {
   gal: {
     to: "/gallery",
-    search: mediaSearchDefaults,
+    search: gallerySearchDefaults,
     replace: true,
   },
   dev: {
     to: "/media/player/$sceneId",
     params: { sceneId: "374" },
-    search: mediaSearchDefaults,
+    search: demoPlayerSearchDefaults,
     replace: true,
   },
   local: {

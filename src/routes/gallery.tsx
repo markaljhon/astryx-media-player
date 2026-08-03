@@ -117,6 +117,14 @@ const MediaGalleryContent = () => {
     });
   };
 
+  const onPlay = (sceneId: string) => {
+    void navigate({
+      to: "/media/player/$sceneId",
+      params: { sceneId: sceneId },
+      search: { ...mediaSearchDefaults, providerId: search.providerId },
+    });
+  };
+
   return (
     <LayoutContent role="main">
       <VStack gap={2} paddingBlock={3}>
@@ -151,6 +159,7 @@ const MediaGalleryContent = () => {
             onPageSizeChange={(nextPageSize) =>
               updateSearch({ pageSize: nextPageSize, page: 1 })
             }
+            onPlay={onPlay}
           />
         </StackItem>
       </VStack>
@@ -162,10 +171,12 @@ const MediaItemList = ({
   page: { items, page, pageSize, totalItems },
   onPageChange,
   onPageSizeChange,
+  onPlay,
 }: {
   page: MediaPage;
   onPageChange: (nextPage: number) => void;
   onPageSizeChange: (nextPageSize: number) => void;
+  onPlay: (sceneId: string) => void;
 }) => {
   return items.length === 0 ?
       <Center style={{ paddingBlock: "var(--spacing-4)" }}>
@@ -189,7 +200,11 @@ const MediaItemList = ({
         />
         <Grid columns={{ minWidth: 280, max: 4, repeat: "fit" }} gap={2}>
           {items.map((item) => (
-            <MediaGalleryCard key={item.id} item={item} />
+            <MediaGalleryCard
+              key={item.id}
+              item={item}
+              onPlay={(item) => onPlay(item.id)}
+            />
           ))}
         </Grid>
         <Pagination

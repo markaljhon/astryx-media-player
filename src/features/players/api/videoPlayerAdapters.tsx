@@ -16,7 +16,7 @@ type VideoPlayerAdapter = {
   Component: ComponentType<VideoPlayerProps>;
 };
 
-const hasSpatialVideoCue = (item: MediaItem) => {
+export const hasSpatialVideoCue = (item: MediaItem) => {
   if (item.kind !== "video") {
     return false;
   }

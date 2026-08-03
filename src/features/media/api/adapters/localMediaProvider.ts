@@ -106,6 +106,9 @@ export const localMediaProvider: MediaProviderAdapter = {
       totalItems: filteredItems.length,
     };
   },
+  getMediaItem: async (request) => {
+    return localMediaCatalog.find((item) => item.id === request.id) ?? null;
+  },
   searchTags: async (request) => {
     return listLocalTags(request.query, request.limit);
   },

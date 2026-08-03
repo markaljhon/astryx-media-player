@@ -38,7 +38,7 @@ export const MediaSideNav = () => {
     void navigate({
       to: "/media/player/$sceneId",
       params: { sceneId: "374" },
-      search: mediaSearch,
+      search: { ...mediaSearch, providerId: "stash" },
     });
   };
 
@@ -69,7 +69,7 @@ export const MediaSideNav = () => {
       <SideNavSection title="Players">
         <SideNavItem
           label="Spatial demo"
-          href="/media/player/374"
+          href="/media/player/374?providerId=stash"
           isSelected={pathname.startsWith("/media/player/")}
           onClick={handleDemoPlayerClick}
         />

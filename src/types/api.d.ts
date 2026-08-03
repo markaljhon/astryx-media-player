@@ -19,6 +19,14 @@ export type MediaTagSearchRequest = {
   limit?: number;
 };
 
+export type MediaItemRequest = {
+  id: string;
+};
+
+export type FetchMediaItemOptions = MediaItemRequest & {
+  providerId?: MediaProviderId;
+};
+
 export type FetchMediaTagsOptions = MediaTagSearchRequest & {
   providerId?: MediaProviderId;
 };
@@ -40,6 +48,7 @@ export type MediaListResult = MediaPage<MediaItem>;
 export interface MediaProviderAdapter {
   id: MediaProviderId;
   listMedia: (request: MediaListRequest) => Promise<MediaListResult>;
+  getMediaItem: (request: MediaItemRequest) => Promise<MediaItem | null>;
   listTags?: () => Promise<MediaTag[]>;
   searchTags?: (request: MediaTagSearchRequest) => Promise<MediaTag[]>;
 }

@@ -7,6 +7,7 @@ import { localMediaProvider } from "./adapters/localMediaProvider";
 import { stashMediaProvider } from "./adapters/stashMediaProvider";
 import type {
   FetchAllMediaTagsOptions,
+  FetchMediaItemOptions,
   FetchMediaListOptions,
   FetchMediaTagsOptions,
   FetchPaginatedMediaListOptions,
@@ -18,6 +19,7 @@ registerMediaProvider(localMediaProvider);
 registerMediaProvider(stashMediaProvider);
 
 export type {
+  FetchMediaItemOptions,
   FetchMediaListOptions,
   FetchMediaTagsOptions,
   FetchAllMediaTagsOptions,
@@ -85,6 +87,20 @@ const getMediaProviderAdapter = (providerId: string) => {
   }
 
   return adapter;
+};
+
+export const fetchMediaItem = async (
+  options: FetchMediaItemOptions,
+): Promise<MediaItem> => {
+  const providerId = options.providerId ?? defaultMediaProviderId;
+  const adapter = getMediaProviderAdapter(providerId);
+  const item = await adapter.getMediaItem({ id: options.id });
+
+  if (!item) {
+    throw new Error(`No media item "${options.id}" found for "${providerId}".`);
+  }
+
+  return item;
 };
 
 export const fetchMediaTags = async (

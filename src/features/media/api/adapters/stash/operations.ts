@@ -55,6 +55,10 @@ export type StashFindMediaScenesData = {
   };
 };
 
+export type StashFindMediaSceneData = {
+  findScene?: StashMediaScene | null;
+};
+
 export type StashFindTaggableScenesData = {
   findScenes?: {
     count?: number;
@@ -82,6 +86,10 @@ export type StashCreateTagVariables = {
 export type StashFindMediaScenesVariables = {
   filter: Record<string, unknown>;
   sceneFilter: Record<string, unknown> | null;
+};
+
+export type StashFindMediaSceneVariables = {
+  id: string;
 };
 
 export type StashFindTaggableScenesVariables = {
@@ -166,6 +174,44 @@ export const findMediaScenesOperation: StashGraphQlOperation<
             name
             id
           }
+        }
+      }
+    }
+  `,
+};
+
+export const findMediaSceneOperation: StashGraphQlOperation<
+  StashFindMediaSceneData,
+  StashFindMediaSceneVariables
+> = {
+  name: "FindMediaScene",
+  document: `
+    query FindMediaScene($id: ID!) {
+      findScene(id: $id) {
+        title
+        paths {
+          stream
+          preview
+          screenshot
+          sprite
+        }
+        files {
+          basename
+          bit_rate
+          duration
+          format
+          frame_rate
+          height
+          size
+          width
+          video_codec
+          created_at
+        }
+        details
+        id
+        tags {
+          name
+          id
         }
       }
     }
