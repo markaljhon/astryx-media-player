@@ -9,6 +9,7 @@ const accessModeChangedEvent = "astryx-media-player:access-mode-changed";
 const accessModeRouteOptions = {
   gal: {
     to: "/gallery",
+    search: mediaSearchDefaults,
     replace: true,
   },
   dev: {

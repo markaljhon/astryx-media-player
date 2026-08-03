@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as GalleryRouteImport } from './routes/gallery'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as MediaIndexRouteImport } from './routes/media.index'
 import { Route as MediaProviderIdRouteImport } from './routes/media.$providerId'
@@ -18,6 +19,11 @@ import { Route as MediaPlayerSceneIdRouteImport } from './routes/media.player.$s
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GalleryRoute = GalleryRouteImport.update({
+  id: '/gallery',
+  path: '/gallery',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MediaRoute = MediaRouteImport.update({
@@ -43,6 +49,7 @@ const MediaPlayerSceneIdRoute = MediaPlayerSceneIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/gallery': typeof GalleryRoute
   '/media': typeof MediaRouteWithChildren
   '/media/$providerId': typeof MediaProviderIdRoute
   '/media/': typeof MediaIndexRoute
@@ -50,6 +57,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/gallery': typeof GalleryRoute
   '/media/$providerId': typeof MediaProviderIdRoute
   '/media': typeof MediaIndexRoute
   '/media/player/$sceneId': typeof MediaPlayerSceneIdRoute
@@ -57,6 +65,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/gallery': typeof GalleryRoute
   '/media': typeof MediaRouteWithChildren
   '/media/$providerId': typeof MediaProviderIdRoute
   '/media/': typeof MediaIndexRoute
@@ -65,12 +74,23 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/media' | '/media/$providerId' | '/media/' | '/media/player/$sceneId'
+    | '/'
+    | '/gallery'
+    | '/media'
+    | '/media/$providerId'
+    | '/media/'
+    | '/media/player/$sceneId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/media/$providerId' | '/media' | '/media/player/$sceneId'
+  to:
+    | '/'
+    | '/gallery'
+    | '/media/$providerId'
+    | '/media'
+    | '/media/player/$sceneId'
   id:
     | '__root__'
     | '/'
+    | '/gallery'
     | '/media'
     | '/media/$providerId'
     | '/media/'
@@ -79,6 +99,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  GalleryRoute: typeof GalleryRoute
   MediaRoute: typeof MediaRouteWithChildren
 }
 
@@ -89,6 +110,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gallery': {
+      id: '/gallery'
+      path: '/gallery'
+      fullPath: '/gallery'
+      preLoaderRoute: typeof GalleryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/media': {
@@ -138,6 +166,7 @@ const MediaRouteWithChildren = MediaRoute._addFileChildren(MediaRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  GalleryRoute: GalleryRoute,
   MediaRoute: MediaRouteWithChildren,
 }
 export const routeTree = rootRouteImport
