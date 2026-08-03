@@ -1,51 +1,16 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-
-type GraphQlResponse<TData> = {
-  data?: TData;
-  errors?: Array<{ message?: string }>;
-};
-
-type StashTag = {
-  id: string;
-  name: string | null;
-};
-
-type StashScene = {
-  id: string;
-  title: string | null;
-  files: Array<{
-    path?: string | null;
-    basename?: string | null;
-  }> | null;
-  tags: Array<{
-    id: string | null;
-    name: string | null;
-  }> | null;
-};
-
-type FindTagsData = {
-  findTags?: {
-    tags?: StashTag[];
-  };
-};
-
-type CreateTagData = {
-  tagCreate?: StashTag | null;
-};
-
-type FindScenesData = {
-  findScenes?: {
-    count?: number;
-    scenes?: StashScene[];
-  };
-};
-
-type UpdateSceneData = {
-  sceneUpdate?: {
-    id: string;
-  } | null;
-};
+import {
+  requestStashGraphQl,
+  type StashGraphQlOperation,
+} from "../src/features/media/api/adapters/stash/graphqlClient";
+import {
+  createTagOperation,
+  findTaggableScenesOperation,
+  findTagsOperation,
+  type StashTaggableScene,
+  updateSceneTagsOperation,
+} from "../src/features/media/api/adapters/stash/operations";
 
 type Options = {
   apply: boolean;
@@ -53,54 +18,6 @@ type Options = {
   pageSize: number;
   limit?: number;
 };
-
-const findTagsQuery = `
-  query FindTags($filter: FindFilterType!, $tagFilter: TagFilterType) {
-    findTags(filter: $filter, tag_filter: $tagFilter) {
-      tags {
-        id
-        name
-      }
-    }
-  }
-`;
-
-const createTagMutation = `
-  mutation CreateTag($input: TagCreateInput!) {
-    tagCreate(input: $input) {
-      id
-      name
-    }
-  }
-`;
-
-const findScenesQuery = `
-  query FindScenes($filter: FindFilterType!) {
-    findScenes(filter: $filter) {
-      count
-      scenes {
-        id
-        title
-        files {
-          path
-          basename
-        }
-        tags {
-          id
-          name
-        }
-      }
-    }
-  }
-`;
-
-const updateSceneMutation = `
-  mutation UpdateScene($input: SceneUpdateInput!) {
-    sceneUpdate(input: $input) {
-      id
-    }
-  }
-`;
 
 const loadEnvFile = (path: string) => {
   if (!existsSync(path)) {
@@ -240,36 +157,25 @@ const getApiKey = () => {
   return process.env.STASH_API_KEY?.trim() || process.env.VITE_STASH_API_KEY?.trim();
 };
 
-const executeGraphQl = async <TData>(
+const executeGraphQl = async <
+  TData,
+  TVariables extends Record<string, unknown>,
+>(
   endpoint: string,
-  query: string,
-  variables: Record<string, unknown>,
+  operation: StashGraphQlOperation<TData, TVariables>,
+  variables: TVariables,
 ) => {
   const apiKey = getApiKey();
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      ...(apiKey ? { ApiKey: apiKey } : {}),
+  const { data } = await requestStashGraphQl(
+    {
+      endpoint,
+      ...(apiKey ? { headers: { ApiKey: apiKey } } : {}),
     },
-    body: JSON.stringify({ query, variables }),
-  });
+    operation,
+    variables,
+  );
 
-  if (!response.ok) {
-    throw new Error(`Stash returned HTTP ${response.status}.`);
-  }
-
-  const payload = (await response.json()) as GraphQlResponse<TData>;
-  if (payload.errors?.length) {
-    const errorMessage = payload.errors
-      .map((error) => error.message)
-      .filter((message): message is string => Boolean(message))
-      .join(" ");
-
-    throw new Error(errorMessage || "Stash returned a GraphQL error.");
-  }
-
-  return payload.data;
+  return data;
 };
 
 const normalizeName = (value: string) => {
@@ -277,18 +183,22 @@ const normalizeName = (value: string) => {
 };
 
 const findTag = async (endpoint: string, tagName: string) => {
-  const data = await executeGraphQl<FindTagsData>(endpoint, findTagsQuery, {
-    filter: {
-      per_page: 1,
-      q: tagName,
-    },
-    tagFilter: {
-      name: {
-        value: tagName,
-        modifier: "EQUALS",
+  const data = await executeGraphQl(
+    endpoint,
+    findTagsOperation,
+    {
+      filter: {
+        per_page: 1,
+        q: tagName,
+      },
+      tagFilter: {
+        name: {
+          value: tagName,
+          modifier: "EQUALS",
+        },
       },
     },
-  });
+  );
 
   return data?.findTags?.tags?.find(
     (tag) => tag.name && normalizeName(tag.name) === normalizeName(tagName),
@@ -305,11 +215,15 @@ const ensureTag = async (endpoint: string, tagName: string, apply: boolean) => {
     return { id: "(new tag)", name: tagName };
   }
 
-  const data = await executeGraphQl<CreateTagData>(endpoint, createTagMutation, {
-    input: {
-      name: tagName,
+  const data = await executeGraphQl(
+    endpoint,
+    createTagOperation,
+    {
+      input: {
+        name: tagName,
+      },
     },
-  });
+  );
 
   if (!data?.tagCreate) {
     throw new Error(`Stash did not return a created ${tagName} tag.`);
@@ -322,7 +236,7 @@ const filePathHasVr = (value: string) => {
   return /(^|[\\/_\-.()[\]\s])vr($|[\\/_\-.()[\]\s])/i.test(value);
 };
 
-const getMatchingPaths = (scene: StashScene) => {
+const getMatchingPaths = (scene: StashTaggableScene) => {
   return (scene.files ?? []).flatMap((file) => {
     const values = [file.path, file.basename].filter(
       (value): value is string => Boolean(value?.trim()),
@@ -332,7 +246,11 @@ const getMatchingPaths = (scene: StashScene) => {
   });
 };
 
-const sceneHasTag = (scene: StashScene, tagId: string, tagName: string) => {
+const sceneHasTag = (
+  scene: StashTaggableScene,
+  tagId: string,
+  tagName: string,
+) => {
   return (scene.tags ?? []).some((tag) => {
     if (tag.id && tag.id === tagId) {
       return true;
@@ -344,7 +262,7 @@ const sceneHasTag = (scene: StashScene, tagId: string, tagName: string) => {
 
 const updateSceneTags = async (
   endpoint: string,
-  scene: StashScene,
+  scene: StashTaggableScene,
   tagId: string,
 ) => {
   const tagIds = new Set(
@@ -352,12 +270,16 @@ const updateSceneTags = async (
   );
   tagIds.add(tagId);
 
-  await executeGraphQl<UpdateSceneData>(endpoint, updateSceneMutation, {
-    input: {
-      id: scene.id,
-      tag_ids: Array.from(tagIds),
+  await executeGraphQl(
+    endpoint,
+    updateSceneTagsOperation,
+    {
+      input: {
+        id: scene.id,
+        tag_ids: Array.from(tagIds),
+      },
     },
-  });
+  );
 };
 
 const main = async () => {
@@ -386,14 +308,18 @@ const main = async () => {
     }
 
     const perPage = Math.min(options.pageSize, remainingLimit);
-    const data = await executeGraphQl<FindScenesData>(endpoint, findScenesQuery, {
-      filter: {
-        page,
-        per_page: perPage,
-        sort: "created_at",
-        direction: "DESC",
+    const data = await executeGraphQl(
+      endpoint,
+      findTaggableScenesOperation,
+      {
+        filter: {
+          page,
+          per_page: perPage,
+          sort: "created_at",
+          direction: "DESC",
+        },
       },
-    });
+    );
     const scenes = data?.findScenes?.scenes ?? [];
 
     if (scenes.length === 0) {

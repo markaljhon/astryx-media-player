@@ -10,6 +10,16 @@ import type {
   StereoVideoLayout,
   VideoProjection,
 } from "@/types/media";
+import {
+  requestStashGraphQl,
+  type StashGraphQlOperation,
+} from "./stash/graphqlClient";
+import {
+  findMediaScenesOperation,
+  findTagsOperation,
+  type StashMediaScene,
+  type StashTag,
+} from "./stash/operations";
 
 const defaultPageSize = 10;
 const tagCatalogPageSize = 500;
@@ -18,99 +28,6 @@ const stashProxyPrefix = "/stash";
 
 const missingTagId = "-1";
 const tagIdByNormalizedName = new Map<string, string>();
-
-const findScenesQuery = `
-  query FindScenes($filter: FindFilterType!, $sceneFilter: SceneFilterType) {
-    findScenes(
-      filter: $filter
-      scene_filter: $sceneFilter
-    ) {
-      count
-      scenes {
-        title
-        paths {
-          stream
-          preview
-          screenshot
-          sprite
-        }
-        files {
-          basename
-          bit_rate
-          duration
-          format
-          frame_rate
-          height
-          size
-          width
-          video_codec
-          created_at
-        }
-        details
-        id
-        tags {
-          name
-          id
-        }
-      }
-    }
-  }
-`;
-
-const findTagsQuery = `
-  query FindTags($filter: FindFilterType!, $tagFilter: TagFilterType) {
-    findTags(filter: $filter, tag_filter: $tagFilter) {
-      count
-      tags {
-        id
-        name
-      }
-    }
-  }
-`;
-
-type StashScene = {
-  id: string;
-  title: string | null;
-  details: string | null;
-  paths: {
-    stream: string | null;
-    preview: string | null;
-    screenshot: string | null;
-  };
-  files: Array<{
-    basename: string | null;
-    duration: number | null;
-    format: string | null;
-    height: number | null;
-    width: number | null;
-  }>;
-  tags: Array<{ name: string | null; id: string | null }>;
-};
-
-type GraphQlResponse<TData> = {
-  data?: TData;
-  errors?: Array<{ message?: string }>;
-};
-
-type StashTag = {
-  id: string;
-  name: string | null;
-};
-
-type StashFindTagsData = {
-  findTags?: {
-    count?: number;
-    tags?: StashTag[];
-  };
-};
-
-type StashFindScenesData = {
-  findScenes?: {
-    count?: number;
-    scenes?: StashScene[];
-  };
-};
 
 const getEndpoint = () => {
   const configuredEndpoint = import.meta.env.VITE_STASH_GRAPHQL_ENDPOINT?.trim();
@@ -147,7 +64,7 @@ const resolveStashUrl = (path: string | null, endpoint: string) => {
   return resolvedUrl.toString();
 };
 
-const inferStereoLayout = (scene: StashScene): StereoVideoLayout => {
+const inferStereoLayout = (scene: StashMediaScene): StereoVideoLayout => {
   const primaryFile = scene.files[0];
   const searchableText = getSceneSearchableText(scene);
 
@@ -172,7 +89,7 @@ const inferStereoLayout = (scene: StashScene): StereoVideoLayout => {
   return "mono";
 };
 
-const getSceneSearchableText = (scene: StashScene) => {
+const getSceneSearchableText = (scene: StashMediaScene) => {
   const primaryFile = scene.files[0];
 
   return [
@@ -186,7 +103,7 @@ const getSceneSearchableText = (scene: StashScene) => {
     .toLowerCase();
 };
 
-const inferVideoProjection = (scene: StashScene): VideoProjection => {
+const inferVideoProjection = (scene: StashMediaScene): VideoProjection => {
   const searchableText = getSceneSearchableText(scene);
 
   if (/\b(vr360|360)\b/.test(searchableText)) {
@@ -200,7 +117,7 @@ const inferVideoProjection = (scene: StashScene): VideoProjection => {
   return "flat";
 };
 
-const mapScene = (scene: StashScene, endpoint: string): MediaItem => {
+const mapScene = (scene: StashMediaScene, endpoint: string): MediaItem => {
   const primaryFile = scene.files[0];
 
   return {
@@ -220,49 +137,23 @@ const mapScene = (scene: StashScene, endpoint: string): MediaItem => {
   };
 };
 
-const executeStashGraphQl = async <TData>(
-  query: string,
-  variables: Record<string, unknown>,
+const executeStashGraphQl = async <
+  TData,
+  TVariables extends Record<string, unknown>,
+>(
+  operation: StashGraphQlOperation<TData, TVariables>,
+  variables: TVariables,
 ) => {
-  const endpoint = getEndpoint();
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      query,
-      variables,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`The Stash media provider returned HTTP ${response.status}.`);
-  }
-
-  const contentType = response.headers.get("content-type") ?? "";
-  if (
-    !contentType.includes("application/graphql-response+json") &&
-    !contentType.includes("application/json") &&
-    !contentType.includes("application/graphql+json")
-  ) {
-    throw new Error(
-      "The Stash endpoint returned HTML instead of GraphQL JSON. " +
+  return requestStashGraphQl(
+    {
+      endpoint: getEndpoint(),
+      invalidContentTypeMessage:
+        "The Stash endpoint returned HTML instead of GraphQL JSON. " +
         "Use /stash/graphql with STASH_SERVER_URL configured in Vite.",
-    );
-  }
-
-  const payload = (await response.json()) as GraphQlResponse<TData>;
-  if (payload.errors?.length) {
-    throw new Error(
-      payload.errors
-        .map((error) => error.message)
-        .filter((message): message is string => Boolean(message))
-        .join(" ") || "The Stash media provider returned a GraphQL error.",
-    );
-  }
-
-  return { endpoint, data: payload.data };
+    },
+    operation,
+    variables,
+  );
 };
 
 const mapTag = (tag: StashTag): MediaTag | null => {
@@ -289,7 +180,7 @@ const fetchTags = async (
 ) => {
   const limit = Math.max(1, Math.floor(request.limit ?? 10));
   const query = request.query?.trim();
-  const { data } = await executeStashGraphQl<StashFindTagsData>(findTagsQuery, {
+  const { data } = await executeStashGraphQl(findTagsOperation, {
     filter: {
       per_page: limit,
       sort: "name",
@@ -317,8 +208,8 @@ const fetchAllTags = async () => {
   let receivedTags = 0;
 
   while (true) {
-    const { data } = await executeStashGraphQl<StashFindTagsData>(
-      findTagsQuery,
+    const { data } = await executeStashGraphQl(
+      findTagsOperation,
       {
         filter: {
           page,
@@ -425,8 +316,8 @@ const fetchScenes = async (
   tags?: MediaTagFilter[],
 ) => {
   const sceneFilter = await createSceneFilter(tags);
-  const { endpoint, data } = await executeStashGraphQl<StashFindScenesData>(
-    findScenesQuery,
+  const { endpoint, data } = await executeStashGraphQl(
+    findMediaScenesOperation,
     {
       filter: {
         page,
