@@ -181,9 +181,12 @@ const MediaItemList = ({
         </VStack>
       </Center>
     : <>
-        <Text type="supporting" color="secondary">
-          Showing {items.length} of {totalItems} items
-        </Text>
+        <MediaItemRangeText
+          itemCount={items.length}
+          page={page}
+          pageSize={pageSize}
+          totalItems={totalItems}
+        />
         <Grid columns={{ minWidth: 280, max: 4, repeat: "fit" }} gap={2}>
           {items.map((item) => (
             <MediaGalleryCard key={item.id} item={item} />
@@ -202,6 +205,29 @@ const MediaItemList = ({
       </>;
 };
 
+const MediaItemRangeText = ({
+  itemCount,
+  page,
+  pageSize,
+  totalItems,
+}: {
+  itemCount: number;
+  page: number;
+  pageSize: number;
+  totalItems: number;
+}) => {
+  const rangeLabel =
+    itemCount === totalItems ?
+      `${itemCount} of ${totalItems}`
+    : `${(page - 1) * pageSize + 1}-${(page - 1) * pageSize + itemCount} of ${totalItems}`;
+
+  return (
+    <Text type="supporting" color="secondary">
+      Showing {rangeLabel} items
+    </Text>
+  );
+};
+
 const MediaGallerySearchBar = ({
   search,
   setSearch,
@@ -218,11 +244,6 @@ const MediaGallerySearchBar = ({
     setSearchValue(value);
     setDebouncedSearch(value);
   };
-
-  React.useEffect(() => {
-    setDebouncedSearch.cancel();
-    setSearchValue(search);
-  }, [search, setDebouncedSearch]);
 
   return (
     <Toolbar
