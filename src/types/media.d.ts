@@ -22,6 +22,13 @@ export type MediaItem = {
   tags?: string[];
 };
 
+export type MediaPage<TItem = MediaItem> = {
+  items: TItem[];
+  page: number;
+  pageSize: number;
+  totalItems: number;
+};
+
 export type MediaTag = {
   id: string;
   label: string;

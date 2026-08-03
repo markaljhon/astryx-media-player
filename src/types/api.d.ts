@@ -1,5 +1,6 @@
 import type {
   MediaItem,
+  MediaPage,
   MediaProviderId,
   MediaTag,
   MediaTagFilter,
@@ -34,12 +35,7 @@ export type FetchPaginatedMediaListOptions = FetchMediaListOptions & {
   paginated: true;
 };
 
-export type MediaListResult = {
-  items: MediaItem[];
-  page: number;
-  pageSize: number;
-  totalItems: number;
-};
+export type MediaListResult = MediaPage<MediaItem>;
 
 export interface MediaProviderAdapter {
   id: MediaProviderId;

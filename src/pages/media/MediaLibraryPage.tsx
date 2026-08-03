@@ -16,7 +16,7 @@ import {
   fetchAllMediaTags,
   fetchMediaList,
   type MediaItem,
-  type MediaListResult,
+  type MediaPage,
   type MediaTag,
 } from "@/features/media/api/mediaApi";
 import { MediaGalleryCard } from "@/features/media/components/MediaGalleryCard";
@@ -189,7 +189,7 @@ export const MediaLibraryPage = (props: { providerId: string }) => {
       setError(null);
 
       try {
-        const result: MediaListResult = await fetchMediaList({
+        const result: MediaPage = await fetchMediaList({
           // providerId: "stash",
           // providerId:  "local",
           providerId: props.providerId,

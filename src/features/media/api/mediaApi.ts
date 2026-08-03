@@ -24,7 +24,7 @@ export type {
   FetchPaginatedMediaListOptions,
   MediaListResult,
 } from "@/types/api";
-export type { MediaItem, MediaTag } from "@/types/media";
+export type { MediaItem, MediaPage, MediaTag } from "@/types/media";
 export {
   defaultMediaProviderId,
   getMediaProvider,
