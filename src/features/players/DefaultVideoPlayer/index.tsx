@@ -36,7 +36,6 @@ export const DefaultVideoPlayer = (props: {
   return (
     <Player.Provider>
       <DefaultVideoSkin
-        className="spatial-mono-video-player"
         poster={props.previewSrc}
         playbackRateControl={props.playbackRateControl}
       >
