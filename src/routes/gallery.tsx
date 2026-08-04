@@ -1,5 +1,6 @@
 import {
   defaultMediaProviderId,
+  fetchAllMediaTags,
   fetchMediaList,
   listMediaProviders,
 } from "@/features/media/api/mediaApi";
@@ -11,7 +12,7 @@ import {
 } from "@/features/media/routing/mediaSearch";
 import { ThemeToggleIconButton } from "@/features/theme/ThemeToggleIconButton";
 import { ProtectedAppShell } from "@/layouts/ProtectedAppShell";
-import type { MediaPage, MediaTagFilter } from "@/types/media";
+import type { MediaPage, MediaTag, MediaTagFilter } from "@/types/media";
 import {
   Center,
   DropdownMenu,
@@ -27,12 +28,14 @@ import {
   StackItem,
   Text,
   TextInput,
+  Tokenizer,
   Toolbar,
   useAppShellMobile,
   VStack,
+  type SearchSource,
 } from "@astryxdesign/core";
 import { createFileRoute, stripSearchParams } from "@tanstack/react-router";
-import { Clapperboard } from "lucide-react";
+import { Clapperboard, EllipsisVertical, Tag } from "lucide-react";
 import React from "react";
 import { useDebouncedCallback } from "use-debounce";
 
@@ -41,6 +44,20 @@ const searchDebounceMs = 250;
 
 type GallerySearch = MediaLibrarySearch & {
   providerId: string;
+};
+
+type MediaTagToken = {
+  id: string;
+  label: string;
+  name: string;
+  isDefault?: boolean;
+};
+
+const defaultVrTag: MediaTagToken = {
+  id: "default-tag:vr",
+  label: "vr",
+  name: defaultVrTagName,
+  isDefault: true,
 };
 
 const gallerySearchDefaults = {
@@ -85,14 +102,110 @@ const getGalleryTagFilters = (search: GallerySearch): MediaTagFilter[] => {
   ];
 };
 
+const toMediaTagToken = (tag: MediaTag): MediaTagToken => {
+  return {
+    id: tag.id,
+    label: tag.label,
+    name: tag.name,
+  };
+};
+
+const toTagSearchToken = (tag: MediaTag): MediaTagToken | null => {
+  if (tag.name.toLowerCase() === defaultVrTag.name.toLowerCase()) {
+    return null;
+  }
+
+  return toMediaTagToken(tag);
+};
+
+const tagCatalogByProvider = new Map<string, Promise<MediaTagToken[]>>();
+
+const fetchGalleryTagCatalog = (providerId: string) => {
+  const cachedCatalog = tagCatalogByProvider.get(providerId);
+
+  if (cachedCatalog) {
+    return cachedCatalog;
+  }
+
+  const catalog = fetchAllMediaTags({ providerId })
+    .then((tags) =>
+      tags.flatMap((tag) => {
+        const token = toTagSearchToken(tag);
+
+        return token ? [token] : [];
+      }),
+    )
+    .catch(() => {
+      tagCatalogByProvider.delete(providerId);
+
+      return [];
+    });
+
+  tagCatalogByProvider.set(providerId, catalog);
+
+  return catalog;
+};
+
+const matchesTagSearch = (tag: MediaTagToken, query: string) => {
+  const normalizedQuery = query.trim().toLowerCase();
+
+  if (normalizedQuery.length === 0) {
+    return true;
+  }
+
+  return (
+    tag.name.toLowerCase().includes(normalizedQuery)
+    || tag.label.toLowerCase().includes(normalizedQuery)
+  );
+};
+
+const isDefaultTag = (tag: MediaTagToken) => {
+  return tag.id === defaultVrTag.id;
+};
+
+const getRouteTag = (tagName: string, tagCatalog: MediaTagToken[]) => {
+  const normalizedTagName = tagName.trim().toLowerCase();
+
+  return (
+    tagCatalog.find((tag) => {
+      return (
+        tag.id.toLowerCase() === normalizedTagName
+        || tag.name.toLowerCase() === normalizedTagName
+        || tag.label.toLowerCase() === normalizedTagName
+      );
+    }) ?? {
+      id: `route-tag:${tagName}`,
+      label: tagName,
+      name: tagName,
+    }
+  );
+};
+
+const getUniqueTagNames = (tags: MediaTagToken[]) => {
+  const uniqueTagNames = new Map<string, string>();
+
+  for (const tag of tags) {
+    if (!isDefaultTag(tag)) {
+      uniqueTagNames.set(tag.name.toLowerCase(), tag.name);
+    }
+  }
+
+  return [...uniqueTagNames.values()];
+};
+
 const MediaGalleryPage = () => {
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+  const focusSearchInput = () => {
+    searchInputRef.current?.focus();
+  };
+
   return (
     <ProtectedAppShell>
       <Layout
-        content={<MediaGalleryContent />}
+        content={<MediaGalleryContent searchInputRef={searchInputRef} />}
         footer={
           <LayoutFooter label="Gallery navigation" hasDivider padding={0}>
-            <MediaGalleryNav />
+            <MediaGalleryNav onSearchClick={focusSearchInput} />
           </LayoutFooter>
         }
       />
@@ -100,11 +213,32 @@ const MediaGalleryPage = () => {
   );
 };
 
-const MediaGalleryContent = () => {
-  const mediaPage = Route.useLoaderData();
+const MediaGalleryContent = ({
+  searchInputRef,
+}: {
+  searchInputRef: React.Ref<HTMLInputElement>;
+}) => {
+  const { mediaPage, tagCatalog } = Route.useLoaderData();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const providers = React.useMemo(() => listMediaProviders(), []);
+  const selectedTags = React.useMemo(
+    () => [
+      ...(search.vr ? [defaultVrTag] : []),
+      ...search.tags.map((tagName) => getRouteTag(tagName, tagCatalog)),
+    ],
+    [search.tags, search.vr, tagCatalog],
+  );
+  const tagSearchSource = React.useMemo<SearchSource<MediaTagToken>>(() => {
+    const searchTags = (searchQuery: string) => {
+      return tagCatalog.filter((tag) => matchesTagSearch(tag, searchQuery));
+    };
+
+    return {
+      search: searchTags,
+      bootstrap: () => searchTags(""),
+    };
+  }, [tagCatalog]);
   const { isMobile } = useAppShellMobile();
 
   const updateSearch = (nextSearch: Partial<GallerySearch>) => {
@@ -147,7 +281,18 @@ const MediaGalleryContent = () => {
         </HStack>
         <MediaGallerySearchBar
           search={search.q}
+          tags={selectedTags}
+          tagCatalog={tagCatalog}
+          tagSearchSource={tagSearchSource}
+          searchInputRef={searchInputRef}
           setSearch={(nextSearch) => updateSearch({ q: nextSearch, page: 1 })}
+          setTags={(nextTags) =>
+            updateSearch({
+              tags: getUniqueTagNames(nextTags),
+              vr: nextTags.some((tag) => isDefaultTag(tag)),
+              page: 1,
+            })
+          }
         />
         <StackItem
           size="fill"
@@ -245,10 +390,20 @@ const MediaItemRangeText = ({
 
 const MediaGallerySearchBar = ({
   search,
+  tags,
+  tagCatalog,
+  tagSearchSource,
+  searchInputRef,
   setSearch,
+  setTags,
 }: {
   search: string;
+  tags: MediaTagToken[];
+  tagCatalog: MediaTagToken[];
+  tagSearchSource: SearchSource<MediaTagToken>;
+  searchInputRef: React.Ref<HTMLInputElement>;
   setSearch: (value: string) => void;
+  setTags: (value: MediaTagToken[]) => void;
 }) => {
   const [searchValue, setSearchValue] = React.useState(search);
   const setDebouncedSearch = useDebouncedCallback(
@@ -266,27 +421,92 @@ const MediaGallerySearchBar = ({
       size="lg"
       gap={3}
       startContent={
-        <HStack gap={3} width="100%">
+        <VStack gap={2} width="100%">
+          <HStack gap={2} width="100%">
+            <StackItem size="fill">
+              <TextInput
+                ref={searchInputRef}
+                label="Search"
+                isLabelHidden
+                placeholder="Search videos, scenes, and more..."
+                value={searchValue}
+                onChange={onChange}
+                startIcon={<Icon icon="search" />}
+                hasClear={true}
+              />
+            </StackItem>
+            <IconButton
+              label="Filter options"
+              icon={<Icon icon={EllipsisVertical} />}
+            />
+          </HStack>
           <StackItem size="fill">
-            <TextInput
-              label="Search"
-              isLabelHidden
-              placeholder="Search videos, scenes, and more..."
-              value={searchValue}
-              onChange={onChange}
-              startIcon={<Icon icon="search" />}
-              hasClear={true}
+            <MediaTagsTokenizer
+              tags={tags}
+              tagCatalog={tagCatalog}
+              tagSearchSource={tagSearchSource}
+              setTags={setTags}
             />
           </StackItem>
-          <IconButton label="Filter options" icon={<Icon icon="funnel" />} />
-        </HStack>
+        </VStack>
       }
     />
   );
 };
 
-const MediaGalleryNav = () => {
+const MediaTagsTokenizer = ({
+  tags,
+  tagCatalog,
+  tagSearchSource,
+  setTags,
+}: {
+  tags: MediaTagToken[];
+  tagCatalog: MediaTagToken[];
+  tagSearchSource: SearchSource<MediaTagToken>;
+  setTags: (value: MediaTagToken[]) => void;
+}) => {
+  console.log({ tags, tagCatalog, tagSearchSource });
+  return (
+    <Tokenizer
+      label="Tags"
+      size="lg"
+      isLabelHidden
+      startIcon={
+        <Icon icon={Tag} style={{ marginInlineEnd: "var(--spacing-1)" }} />
+      }
+      value={tags}
+      onChange={setTags}
+      searchSource={tagSearchSource}
+      placeholder="Add tags"
+      hasEntriesOnFocus
+      maxMenuItems={Math.max(10, tagCatalog.length)}
+      hasClear
+      debounceMs={200}
+    />
+  );
+};
+
+const MediaGalleryNav = ({
+  onSearchClick,
+}: {
+  onSearchClick: () => void;
+}) => {
+  const { mediaPage } = Route.useLoaderData();
+  const navigate = Route.useNavigate();
   const { isMobile } = useAppShellMobile();
+  const { page, pageSize, totalItems } = mediaPage;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const canGoPrevious = page > 1;
+  const canGoNext = page < totalPages;
+  const goToPage = (nextPage: number) => {
+    void navigate({
+      replace: true,
+      search: (currentSearch) => ({
+        ...currentSearch,
+        page: nextPage,
+      }),
+    });
+  };
 
   return (
     <Toolbar
@@ -305,18 +525,23 @@ const MediaGalleryNav = () => {
             tooltip="Search gallery"
             variant="ghost"
             icon={<Icon icon="search" />}
+            onClick={onSearchClick}
           />
           <IconButton
-            label="Previous item"
-            tooltip="Previous item"
+            label="Previous page"
+            tooltip="Previous page"
             variant="ghost"
             icon={<Icon icon="chevronLeft" />}
+            isDisabled={!canGoPrevious}
+            onClick={() => goToPage(page - 1)}
           />
           <IconButton
-            label="Next item"
-            tooltip="Next item"
+            label="Next page"
+            tooltip="Next page"
             variant="ghost"
             icon={<Icon icon="chevronRight" />}
+            isDisabled={!canGoNext}
+            onClick={() => goToPage(page + 1)}
           />
         </HStack>
       }
@@ -331,14 +556,22 @@ export const Route = createFileRoute("/gallery")({
   },
   loaderDeps: ({ search }) => search,
   loader: async ({ deps }) => {
-    return fetchMediaList({
-      providerId: deps.providerId,
-      query: deps.q.trim(),
-      tags: getGalleryTagFilters(deps),
-      page: deps.page,
-      pageSize: deps.pageSize,
-      paginated: true,
-    });
+    const [mediaPage, tagCatalog] = await Promise.all([
+      fetchMediaList({
+        providerId: deps.providerId,
+        query: deps.q.trim(),
+        tags: getGalleryTagFilters(deps),
+        page: deps.page,
+        pageSize: deps.pageSize,
+        paginated: true,
+      }),
+      fetchGalleryTagCatalog(deps.providerId),
+    ]);
+
+    return {
+      mediaPage,
+      tagCatalog,
+    };
   },
   component: MediaGalleryPage,
 });

@@ -14,7 +14,7 @@ import { Route as GalleryRouteImport } from './routes/gallery'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as MediaIndexRouteImport } from './routes/media.index'
 import { Route as MediaProviderIdRouteImport } from './routes/media.$providerId'
-import { Route as MediaPlayerSceneIdRouteImport } from './routes/media.player.$sceneId'
+import { Route as MediaPlayerSceneIdRouteImport } from './routes/media_.player.$sceneId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -42,9 +42,9 @@ const MediaProviderIdRoute = MediaProviderIdRouteImport.update({
   getParentRoute: () => MediaRoute,
 } as any)
 const MediaPlayerSceneIdRoute = MediaPlayerSceneIdRouteImport.update({
-  id: '/player/$sceneId',
-  path: '/player/$sceneId',
-  getParentRoute: () => MediaRoute,
+  id: '/media_/player/$sceneId',
+  path: '/media/player/$sceneId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -69,7 +69,7 @@ export interface FileRoutesById {
   '/media': typeof MediaRouteWithChildren
   '/media/$providerId': typeof MediaProviderIdRoute
   '/media/': typeof MediaIndexRoute
-  '/media/player/$sceneId': typeof MediaPlayerSceneIdRoute
+  '/media_/player/$sceneId': typeof MediaPlayerSceneIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -94,13 +94,14 @@ export interface FileRouteTypes {
     | '/media'
     | '/media/$providerId'
     | '/media/'
-    | '/media/player/$sceneId'
+    | '/media_/player/$sceneId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   GalleryRoute: typeof GalleryRoute
   MediaRoute: typeof MediaRouteWithChildren
+  MediaPlayerSceneIdRoute: typeof MediaPlayerSceneIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -140,12 +141,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MediaProviderIdRouteImport
       parentRoute: typeof MediaRoute
     }
-    '/media/player/$sceneId': {
-      id: '/media/player/$sceneId'
-      path: '/player/$sceneId'
+    '/media_/player/$sceneId': {
+      id: '/media_/player/$sceneId'
+      path: '/media/player/$sceneId'
       fullPath: '/media/player/$sceneId'
       preLoaderRoute: typeof MediaPlayerSceneIdRouteImport
-      parentRoute: typeof MediaRoute
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -153,13 +154,11 @@ declare module '@tanstack/react-router' {
 interface MediaRouteChildren {
   MediaProviderIdRoute: typeof MediaProviderIdRoute
   MediaIndexRoute: typeof MediaIndexRoute
-  MediaPlayerSceneIdRoute: typeof MediaPlayerSceneIdRoute
 }
 
 const MediaRouteChildren: MediaRouteChildren = {
   MediaProviderIdRoute: MediaProviderIdRoute,
   MediaIndexRoute: MediaIndexRoute,
-  MediaPlayerSceneIdRoute: MediaPlayerSceneIdRoute,
 }
 
 const MediaRouteWithChildren = MediaRoute._addFileChildren(MediaRouteChildren)
@@ -168,6 +167,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   GalleryRoute: GalleryRoute,
   MediaRoute: MediaRouteWithChildren,
+  MediaPlayerSceneIdRoute: MediaPlayerSceneIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

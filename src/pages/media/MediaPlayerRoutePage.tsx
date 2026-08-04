@@ -1,13 +1,19 @@
-import { getRouteApi } from "@tanstack/react-router";
+import { Navigate, getRouteApi } from "@tanstack/react-router";
 import { Center, Text, VStack } from "@astryxdesign/core";
+import { useAccess } from "@/features/auth/access";
 import { DefaultVideoPlayer } from "@/features/players/DefaultVideoPlayer";
 import { hasSpatialVideoCue } from "@/features/players/api/videoPlayerAdapters";
 import { SpatialMonoVideoPlayer } from "@/features/players/SpatialMonoVideoPlayer";
 
-const routeApi = getRouteApi("/media/player/$sceneId");
+const routeApi = getRouteApi("/media_/player/$sceneId");
 
 export const MediaPlayerRoutePage = () => {
   const item = routeApi.useLoaderData();
+  const { hasAccess } = useAccess();
+
+  if (!hasAccess) {
+    return <Navigate to="/" replace />;
+  }
 
   if (!item.sourceUrl) {
     return (

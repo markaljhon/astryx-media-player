@@ -32,7 +32,7 @@ const validateMediaPlayerSearch = (
   return { providerId };
 };
 
-export const Route = createFileRoute("/media/player/$sceneId")({
+export const Route = createFileRoute("/media_/player/$sceneId")({
   validateSearch: validateMediaPlayerSearch,
   search: {
     middlewares: [stripSearchParams(mediaPlayerSearchDefaults)],
