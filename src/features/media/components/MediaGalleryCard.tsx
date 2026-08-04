@@ -176,7 +176,7 @@ export const MediaGalleryCard = ({ item, onPlay }: MediaGalleryCardProps) => {
       </Section>;
 
   return (
-    <Card padding={0}>
+    <Card padding={0} style={{ border: "none" }}>
       <VStack>
         <AspectRatio
           ref={previewRef}

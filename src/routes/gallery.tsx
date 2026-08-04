@@ -195,17 +195,45 @@ const getUniqueTagNames = (tags: MediaTagToken[]) => {
 
 const MediaGalleryPage = () => {
   const searchInputRef = React.useRef<HTMLInputElement>(null);
+  const mediaItemsRef = React.useRef<HTMLDivElement>(null);
+  const shouldScrollToFirstMediaItemRef = React.useRef(false);
   const focusSearchInput = () => {
     searchInputRef.current?.focus();
   };
+  const requestScrollToFirstMediaItem = React.useCallback(() => {
+    shouldScrollToFirstMediaItemRef.current = true;
+  }, []);
+  const scrollToFirstMediaItem = React.useCallback(() => {
+    if (!shouldScrollToFirstMediaItemRef.current) {
+      return;
+    }
+
+    shouldScrollToFirstMediaItemRef.current = false;
+    window.requestAnimationFrame(() => {
+      mediaItemsRef.current?.scrollIntoView({
+        block: "start",
+        behavior: "smooth",
+      });
+    });
+  }, []);
 
   return (
     <ProtectedAppShell>
       <Layout
-        content={<MediaGalleryContent searchInputRef={searchInputRef} />}
+        content={
+          <MediaGalleryContent
+            searchInputRef={searchInputRef}
+            mediaItemsRef={mediaItemsRef}
+            requestScrollToFirstMediaItem={requestScrollToFirstMediaItem}
+            scrollToFirstMediaItem={scrollToFirstMediaItem}
+          />
+        }
         footer={
           <LayoutFooter label="Gallery navigation" hasDivider padding={0}>
-            <MediaGalleryNav onSearchClick={focusSearchInput} />
+            <MediaGalleryNav
+              onSearchClick={focusSearchInput}
+              requestScrollToFirstMediaItem={requestScrollToFirstMediaItem}
+            />
           </LayoutFooter>
         }
       />
@@ -215,8 +243,14 @@ const MediaGalleryPage = () => {
 
 const MediaGalleryContent = ({
   searchInputRef,
+  mediaItemsRef,
+  requestScrollToFirstMediaItem,
+  scrollToFirstMediaItem,
 }: {
   searchInputRef: React.Ref<HTMLInputElement>;
+  mediaItemsRef: React.Ref<HTMLDivElement>;
+  requestScrollToFirstMediaItem: () => void;
+  scrollToFirstMediaItem: () => void;
 }) => {
   const { mediaPage, tagCatalog } = Route.useLoaderData();
   const search = Route.useSearch();
@@ -240,6 +274,10 @@ const MediaGalleryContent = ({
     };
   }, [tagCatalog]);
   const { isMobile } = useAppShellMobile();
+
+  React.useEffect(() => {
+    scrollToFirstMediaItem();
+  }, [mediaPage.items, mediaPage.page, scrollToFirstMediaItem]);
 
   const updateSearch = (nextSearch: Partial<GallerySearch>) => {
     void navigate({
@@ -299,8 +337,12 @@ const MediaGalleryContent = ({
           style={isMobile ? undefined : { paddingInline: "var(--spacing-3)" }}
         >
           <MediaItemList
+            mediaItemsRef={mediaItemsRef}
             page={mediaPage}
-            onPageChange={(nextPage) => updateSearch({ page: nextPage })}
+            onPageChange={(nextPage) => {
+              requestScrollToFirstMediaItem();
+              updateSearch({ page: nextPage });
+            }}
             onPageSizeChange={(nextPageSize) =>
               updateSearch({ pageSize: nextPageSize, page: 1 })
             }
@@ -313,11 +355,13 @@ const MediaGalleryContent = ({
 };
 
 const MediaItemList = ({
+  mediaItemsRef,
   page: { items, page, pageSize, totalItems },
   onPageChange,
   onPageSizeChange,
   onPlay,
 }: {
+  mediaItemsRef: React.Ref<HTMLDivElement>;
   page: MediaPage;
   onPageChange: (nextPage: number) => void;
   onPageSizeChange: (nextPageSize: number) => void;
@@ -343,7 +387,11 @@ const MediaItemList = ({
           pageSize={pageSize}
           totalItems={totalItems}
         />
-        <Grid columns={{ minWidth: 280, max: 4, repeat: "fit" }} gap={2}>
+        <Grid
+          ref={mediaItemsRef}
+          columns={{ minWidth: 280, max: 4, repeat: "fit" }}
+          gap={2}
+        >
           {items.map((item) => (
             <MediaGalleryCard
               key={item.id}
@@ -488,8 +536,10 @@ const MediaTagsTokenizer = ({
 
 const MediaGalleryNav = ({
   onSearchClick,
+  requestScrollToFirstMediaItem,
 }: {
   onSearchClick: () => void;
+  requestScrollToFirstMediaItem: () => void;
 }) => {
   const { mediaPage } = Route.useLoaderData();
   const navigate = Route.useNavigate();
@@ -499,6 +549,7 @@ const MediaGalleryNav = ({
   const canGoPrevious = page > 1;
   const canGoNext = page < totalPages;
   const goToPage = (nextPage: number) => {
+    requestScrollToFirstMediaItem();
     void navigate({
       replace: true,
       search: (currentSearch) => ({

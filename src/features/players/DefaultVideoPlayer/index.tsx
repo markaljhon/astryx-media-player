@@ -39,7 +39,7 @@ export const DefaultVideoPlayer = (props: {
         poster={props.previewSrc}
         playbackRateControl={props.playbackRateControl}
       >
-        <Video src={props.src} playsInline />
+        <Video src={props.src} autoPlay muted playsInline />
       </DefaultVideoSkin>
     </Player.Provider>
   );

@@ -25,6 +25,12 @@ export const MonoVideoCanvas = (props: MonoVideoCanvasProps) => {
         fov: DEFAULT_CAMERA_FOV,
       }}
       resize={{ offsetSize: true }}
+      style={{
+        height: "100%",
+        inset: 0,
+        position: "absolute",
+        width: "100%",
+      }}
     >
       <CameraGestureControls
         heightGesturePointerRef={heightGesturePointerRef}
