@@ -12,6 +12,7 @@ import {
 import {
   CheckIcon,
   ChevronIcon,
+  FullscreenEnterIcon,
   PauseIcon,
   PlayIcon,
   RestartIcon,
@@ -41,6 +42,7 @@ import {
   Time,
   TimeSlider,
   Tooltip,
+  useContainer,
   usePlaybackRateOptions,
   usePlayer,
   VolumeIndicator,
@@ -48,7 +50,10 @@ import {
   type RenderProp,
 } from "@videojs/react";
 import { PanGesture } from "./PanGesture";
-import { PinchZoomGesture } from "./PinchZoomGesture";
+import {
+  DEFAULT_VIDEO_FIT_REQUEST_EVENT,
+  PinchZoomGesture,
+} from "./PinchZoomGesture";
 
 const SEEK_TIME = 10;
 const CENTER_STATUS_ACTIONS = ["togglePaused"] as const;
@@ -220,6 +225,7 @@ export const DefaultVideoSkin = ({
           <div className="media-button-group">
             <VolumePopover />
             <PlaybackRateControl mode={playbackRateControl} />
+            <FitVideoButton />
           </div>
         </Tooltip.Provider>
       </Controls.Root>
@@ -305,6 +311,32 @@ const Button = forwardRef<HTMLButtonElement, ComponentProps<"button">>(
 );
 
 Button.displayName = "Button";
+
+const FitVideoButton = (): ReactNode => {
+  const container = useContainer();
+
+  const handleClick = () => {
+    container?.dispatchEvent(new CustomEvent(DEFAULT_VIDEO_FIT_REQUEST_EVENT));
+  };
+
+  return (
+    <Tooltip.Root side="top">
+      <Tooltip.Trigger
+        render={
+          <Button
+            className="media-button--fullscreen"
+            aria-label="Toggle fit video"
+            title="Toggle fit video"
+            onClick={handleClick}
+          >
+            <FullscreenEnterIcon className="media-icon media-icon--fullscreen-enter" />
+          </Button>
+        }
+      />
+      <Tooltip.Popup className="media-tooltip">Toggle fit video</Tooltip.Popup>
+    </Tooltip.Root>
+  );
+};
 
 const VolumePopover = (): ReactNode => {
   const volumeUnsupported = usePlayer(

@@ -23,10 +23,14 @@ const MIN_SCALE = 1;
 const WHEEL_LINE_HEIGHT = 16;
 const WHEEL_ZOOM_SENSITIVITY = 0.002;
 
+export const DEFAULT_VIDEO_FIT_REQUEST_EVENT = "default-video-fit-request";
+
 type Point = {
   x: number;
   y: number;
 };
+
+type AutoFitAxis = "height" | "width";
 
 type ZoomState = {
   scale: number;
@@ -105,6 +109,7 @@ export const PinchZoomGesture = ({
     };
     const pinchStartRef: { current: PinchStart | null } = { current: null };
     const pinchActiveRef = { current: false };
+    const autoFitActiveRef = { current: false };
     const configuredMaxScale =
       Number.isFinite(maxScale) ?
         Math.max(MIN_SCALE, maxScale)
@@ -218,6 +223,23 @@ export const PinchZoomGesture = ({
         viewportSize - layoutOffset - scaledContentOffset - scaledContentSize;
       const maximum = -layoutOffset - scaledContentOffset;
       return Math.min(maximum, Math.max(minimum, translation));
+    };
+
+    const getAutoFitAxis = (): AutoFitAxis =>
+      container.clientHeight >= container.clientWidth ? "height" : "width";
+
+    const getFitScale = (axis: AutoFitAxis) => {
+      const renderedVideoMetrics = getRenderedVideoMetrics();
+      const targetSize =
+        axis === "height" ? container.clientHeight : container.clientWidth;
+      const renderedSize =
+        axis === "height" ?
+          renderedVideoMetrics.height
+        : renderedVideoMetrics.width;
+
+      if (targetSize <= 0 || renderedSize <= 0) return MIN_SCALE;
+
+      return Math.max(MIN_SCALE, targetSize / renderedSize);
     };
 
     const clampZoom = (
@@ -370,6 +392,42 @@ export const PinchZoomGesture = ({
       video.style.willChange = "transform";
     };
 
+    const applyAutoFit = () => {
+      const scale = getFitScale(getAutoFitAxis());
+      const centerAnchor: LayoutAnchor = {
+        contentRatioX: 0.5,
+        contentRatioY: 0.5,
+        viewportRatioX: 0.5,
+        viewportRatioY: 0.5,
+      };
+
+      autoFitActiveRef.current = true;
+      applyZoom(
+        getZoomFromLayoutAnchor(centerAnchor, scale),
+        getContainerCenter(),
+        {
+          desiredScale: scale,
+          maxScaleFloor: scale,
+        },
+      );
+    };
+
+    const resetZoom = () => {
+      autoFitActiveRef.current = false;
+      applyZoom(
+        {
+          scale: MIN_SCALE,
+          translateX: 0,
+          translateY: 0,
+        },
+        getContainerCenter(),
+        {
+          desiredScale: MIN_SCALE,
+          maxScaleFloor: MIN_SCALE,
+        },
+      );
+    };
+
     const isInteractiveTarget = (target: EventTarget | null) =>
       target instanceof Element
       && Boolean(target.closest(INTERACTIVE_TARGET_SELECTOR));
@@ -397,6 +455,7 @@ export const PinchZoomGesture = ({
         && event.button === MIDDLE_MOUSE_BUTTON
         && !isInteractiveTarget(event.target)
       ) {
+        autoFitActiveRef.current = false;
         event.preventDefault();
         middleMousePanRef.current = {
           lastPoint: getContainerPoint(event),
@@ -418,6 +477,7 @@ export const PinchZoomGesture = ({
       container.setPointerCapture?.(event.pointerId);
 
       if (pointers.size === 2) {
+        autoFitActiveRef.current = false;
         event.preventDefault();
         startPinch();
       }
@@ -530,6 +590,7 @@ export const PinchZoomGesture = ({
     const handleWheel = (event: WheelEvent) => {
       if (event.deltaY === 0 || isInteractiveTarget(event.target)) return;
 
+      autoFitActiveRef.current = false;
       event.preventDefault();
       const deltaMultiplier =
         event.deltaMode === WheelEvent.DOM_DELTA_LINE ? WHEEL_LINE_HEIGHT
@@ -577,6 +638,7 @@ export const PinchZoomGesture = ({
     const handlePanDelta = (event: Event) => {
       const { deltaX, deltaY } = (event as CustomEvent<PanGestureDelta>).detail;
 
+      autoFitActiveRef.current = false;
       applyZoom(
         {
           ...zoomRef.current,
@@ -589,6 +651,11 @@ export const PinchZoomGesture = ({
     };
 
     const handleLayoutChange = () => {
+      if (autoFitActiveRef.current) {
+        applyAutoFit();
+        return;
+      }
+
       const anchor =
         layoutAnchorRef.current
         ?? getLayoutAnchor(zoomRef.current, getContainerCenter());
@@ -611,9 +678,23 @@ export const PinchZoomGesture = ({
         { preserveDesiredScale: true },
       );
     };
+
+    const handleFitRequest = () => {
+      if (autoFitActiveRef.current) {
+        resetZoom();
+        return;
+      }
+
+      applyAutoFit();
+    };
+
     const resizeObserver = new ResizeObserver(handleLayoutChange);
     resizeObserver.observe(container);
     video.addEventListener("loadedmetadata", handleLayoutChange);
+    container.addEventListener(
+      DEFAULT_VIDEO_FIT_REQUEST_EVENT,
+      handleFitRequest,
+    );
     container.addEventListener(PAN_GESTURE_DELTA_EVENT, handlePanDelta);
     container.addEventListener("pointerdown", handlePointerDown, {
       passive: false,
@@ -636,6 +717,10 @@ export const PinchZoomGesture = ({
     return () => {
       resizeObserver.disconnect();
       video.removeEventListener("loadedmetadata", handleLayoutChange);
+      container.removeEventListener(
+        DEFAULT_VIDEO_FIT_REQUEST_EVENT,
+        handleFitRequest,
+      );
       container.removeEventListener(PAN_GESTURE_DELTA_EVENT, handlePanDelta);
       container.removeEventListener("pointerdown", handlePointerDown);
       container.removeEventListener("pointermove", handlePointerMove);
@@ -655,6 +740,7 @@ export const PinchZoomGesture = ({
       };
       desiredScaleRef.current = MIN_SCALE;
       layoutAnchorRef.current = null;
+      autoFitActiveRef.current = false;
     };
   }, [container, disabled, maxScale]);
 
