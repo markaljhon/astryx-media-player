@@ -14,7 +14,7 @@ Project-specific guidance for AI coding agents.
 - `src/features/players/api/` contains player adapter selection and player-facing contracts.
 - `src/features/players/DefaultVideoPlayer/` contains the conventional flat-video player entry point.
 - `src/features/players/components/` contains shared player controls, dialogs, features, and gestures. Keep dedicated spatial-player internals in `src/features/players/SpatialMonoVideoPlayer/`.
-- `src/themes/y2k/` contains the active Astryx theme and icon registry.
+- `src/themes/astryx/` contains the active custom Astryx theme.
 - `scripts/` contains local maintenance tooling, including Stash scripts.
 
 ## Command Execution Safety

@@ -40,7 +40,7 @@ src/
     ProtectedAppShell.tsx
   routes/
     __root.tsx
-    gallery.index.tsx
+    gallery.tsx
     index.tsx
     media.tsx
     media.$providerId.tsx
@@ -49,6 +49,7 @@ src/
   features/
     auth/
       access.ts
+    theme/
     media/
       api/
         adapters/
@@ -60,7 +61,7 @@ src/
       components/
       SpatialMonoVideoPlayer/
   themes/
-    y2k/
+    astryx/
 
 public/
 scripts/
@@ -80,7 +81,8 @@ scripts/
 - `features/players/DefaultVideoPlayer/` for the conventional flat-video player entry point
 - `features/players/components/` for shared player controls, dialogs, features, and gestures
 - `features/players/SpatialMonoVideoPlayer/` for the dedicated React Three Fiber spatial player and its feature-specific components
-- `themes/y2k/` for the active Astryx theme and icon registry
+- `features/theme/` for theme-mode state and the app-level Astryx theme provider
+- `themes/astryx/` for the active custom Astryx theme
 - `public/` for static browser assets such as the favicon and web manifest
 - `scripts/` for local tooling, including Stash maintenance scripts
 
@@ -94,7 +96,7 @@ This project follows the Astryx layout rules:
 - keep dense media content in rows, lists, or galleries rather than card-wrapping everything
 - use `TextInput` for the search field
 
-The current theme lives in `src/themes/y2k/y2kTheme.ts`.
+The current custom theme lives in `src/themes/astryx/astryxTheme.ts`.
 
 ## Routing
 
@@ -106,7 +108,7 @@ This project uses TanStack Router file-based routing through
 - `src/routes/__root.tsx` owns the root route and renders only `<Outlet />`.
 - `src/routes/media.tsx` owns the media layout route, protected app shell, media
   side nav, and shared media search-param validation.
-- `src/routes/gallery.index.tsx` owns the protected standalone gallery prototype,
+- `src/routes/gallery.tsx` owns the protected standalone gallery prototype,
   including its search field and footer navigation.
 - Leaf route modules such as `src/routes/media.$providerId.tsx` and
   `src/routes/media.player.$sceneId.tsx` should stay small and delegate UI to
@@ -128,6 +130,9 @@ page     current gallery page
 pageSize current gallery page size
 ```
 
+The standalone `/gallery` route also owns a `providerId` search parameter so the
+prototype can switch between registered providers without changing routes.
+
 Current routes:
 
 ```txt
@@ -137,6 +142,31 @@ Current routes:
 /media/$providerId   provider-backed media library, for example stash or local
 /media/player/$sceneId spatial Stash scene player
 ```
+
+## Media provider adapters
+
+Media providers register themselves from `src/features/media/api/mediaApi.ts`.
+The registry defaults to the `local` provider, and route loaders call
+`fetchMediaList`, `fetchMediaItem`, `fetchMediaTags`, or `fetchAllMediaTags`
+instead of importing concrete adapters directly.
+
+Provider adapters should return normalized `MediaItem` objects with browser-safe
+URLs. Paginated list requests return `{ items, page, pageSize, totalItems }`.
+Tag filters are resolved by name or id; when a tag cannot be resolved for Stash,
+the request intentionally includes a missing tag id so the result set is empty
+rather than silently broad.
+
+## Player selection
+
+The player adapter list lives in `src/features/players/api/videoPlayerAdapters.tsx`.
+Spatial playback is selected when a video item has a non-flat
+`videoProjection`, or when the title, description, or tags include spatial cues
+such as `VR`, `VR180`, `VR360`, `3D`, `SBS`, `side-by-side`, `top-bottom`, or
+`over-under`. Other playable video items fall back to the default flat player.
+
+Both flat and spatial players normalize `playbackSources` so the requested `src`
+is always present. HLS sources are routed through `HlsJsVideo`; direct MP4/WebM
+sources use the standard `Video` preset.
 
 ## Flat video controls
 
@@ -151,6 +181,19 @@ supports:
 Zoom and pan ignore interactive controls and stay bounded to the visible video
 area. Letterboxed video can zoom beyond the configured cap when needed to cover
 the player viewport.
+
+## Spatial video controls
+
+The spatial mono player renders video onto a React Three Fiber sphere and uses
+the custom `SpatialMonoVideoSkin`. It supports:
+
+- pointer drag to look around within bounded pitch and yaw
+- mouse wheel or touch pinch to adjust camera FOV
+- center-region double tap followed by a vertical drag to adjust camera height
+- source switching through the same normalized playback-source model as the
+  flat player
+
+Camera orientation, FOV, and height reset when the selected source URL changes.
 
 ## Code Style
 
