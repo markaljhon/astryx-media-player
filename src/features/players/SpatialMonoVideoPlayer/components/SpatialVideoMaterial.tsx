@@ -1,8 +1,7 @@
 import { useVideoTexture } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
+import { HlsJsMedia } from "@videojs/core/dom/media/hls-js";
 import { useMediaAttach } from "@videojs/react";
-import { Events } from "hls.js";
-import Hls from "hls.js";
 import { Suspense, useEffect, useState } from "react";
 import {
   BackSide,
@@ -11,10 +10,12 @@ import {
   type VideoTexture as ThreeVideoTexture,
 } from "three";
 import type { MediaPlaybackSource } from "@/types/media";
+import { createHlsPlaybackConfig } from "../../api/hlsPlaybackConfig";
 
 type SpatialVideoMaterialProps = {
   source: MediaPlaybackSource;
   onSourceReady?: () => void;
+  onSourceError?: () => void;
 };
 
 export const SpatialVideoMaterial = (props: SpatialVideoMaterialProps) => {
@@ -24,6 +25,7 @@ export const SpatialVideoMaterial = (props: SpatialVideoMaterialProps) => {
         <HlsSpatialVideoMaterial
           source={props.source}
           onSourceReady={props.onSourceReady}
+          onSourceError={props.onSourceError}
         />
       </Suspense>
     );
@@ -34,12 +36,14 @@ export const SpatialVideoMaterial = (props: SpatialVideoMaterialProps) => {
       <DirectSpatialVideoMaterial
         source={props.source}
         onSourceReady={props.onSourceReady}
+        onSourceError={props.onSourceError}
       />
     </Suspense>
   );
 };
 
 const DirectSpatialVideoMaterial = ({
+  onSourceError,
   onSourceReady,
   source,
 }: SpatialVideoMaterialProps) => {
@@ -54,26 +58,36 @@ const DirectSpatialVideoMaterial = ({
   useEffect(() => {
     const video = texture.image;
     const cleanupReadyListeners = onMediaReady(video, onSourceReady);
+    const handleError = () => {
+      onSourceError?.();
+    };
 
+    video.addEventListener("error", handleError);
     setMedia?.(video);
 
     return () => {
+      video.removeEventListener("error", handleError);
       cleanupReadyListeners();
       setMedia?.((currentMedia) =>
         currentMedia === video ? null : currentMedia,
       );
       video.pause();
     };
-  }, [onSourceReady, setMedia, texture.image]);
+  }, [onSourceError, onSourceReady, setMedia, texture.image]);
 
   return <SpatialTextureMaterial texture={texture} />;
 };
 
 const HlsSpatialVideoMaterial = ({
+  onSourceError,
   onSourceReady,
   source,
 }: SpatialVideoMaterialProps) => {
-  const texture = useSpatialHlsVideoTexture(source, onSourceReady);
+  const texture = useSpatialHlsVideoTexture(
+    source,
+    onSourceReady,
+    onSourceError,
+  );
 
   if (!texture) {
     return <meshBasicMaterial color="black" wireframe />;
@@ -98,6 +112,7 @@ const SpatialTextureMaterial = ({
 const useSpatialHlsVideoTexture = (
   source: MediaPlaybackSource,
   onSourceReady: (() => void) | undefined,
+  onSourceError: (() => void) | undefined,
 ) => {
   const outputColorSpace = useThree((state) => state.gl.outputColorSpace);
   const setMedia = useMediaAttach();
@@ -105,18 +120,24 @@ const useSpatialHlsVideoTexture = (
   const { url } = source;
 
   useEffect(() => {
-    let hls: Hls | null = null;
     let isDisposed = false;
+    const media = new HlsJsMedia();
     const video = document.createElement("video");
     const nextTexture = new VideoTexture(video);
 
     nextTexture.colorSpace = outputColorSpace;
     video.autoplay = true;
-    video.crossOrigin = "anonymous";
     video.loop = false;
     video.muted = false;
     video.playsInline = true;
     video.preload = "auto";
+    media.autoplay = true;
+    media.config = {
+      hlsJs: createHlsPlaybackConfig(url),
+    };
+    media.loop = false;
+    media.muted = false;
+    media.preload = "auto";
 
     const handleLoadedData = () => {
       if (isDisposed) {
@@ -124,42 +145,46 @@ const useSpatialHlsVideoTexture = (
       }
 
       setTexture(nextTexture);
-      setMedia?.(video);
-      void video.play().catch(() => undefined);
+      void media.play().catch(() => undefined);
+    };
+    const handleError = () => {
+      if (isDisposed) {
+        return;
+      }
+
+      onSourceError?.();
     };
     const cleanupReadyListeners = onMediaReady(video, onSourceReady);
 
     video.addEventListener("loadeddata", handleLoadedData);
+    video.addEventListener("error", handleError);
+    media.addEventListener("error", handleError);
 
-    if (!canPlayNativeHls(video) && Hls.isSupported()) {
-      hls = new Hls();
-      hls.on(Events.MEDIA_ATTACHED, () => {
-        hls?.loadSource(url);
-      });
-      hls.attachMedia(video);
-    } else {
-      video.src = url;
-    }
-
-    video.load();
+    media.attach(video);
+    setMedia?.(media);
+    media.src = url;
+    void media.load();
+    void media.play().catch(() => undefined);
 
     return () => {
       isDisposed = true;
       video.removeEventListener("loadeddata", handleLoadedData);
+      video.removeEventListener("error", handleError);
+      media.removeEventListener("error", handleError);
       cleanupReadyListeners();
       setTexture((currentTexture) =>
         currentTexture === nextTexture ? null : currentTexture,
       );
       setMedia?.((currentMedia) =>
-        currentMedia === video ? null : currentMedia,
+        currentMedia === media ? null : currentMedia,
       );
-      video.pause();
-      hls?.destroy();
+      media.pause();
+      media.destroy();
       nextTexture.dispose();
       video.removeAttribute("src");
       video.load();
     };
-  }, [onSourceReady, outputColorSpace, setMedia, url]);
+  }, [onSourceError, onSourceReady, outputColorSpace, setMedia, url]);
 
   return texture;
 };
@@ -217,13 +242,6 @@ const isHlsSource = (source: MediaPlaybackSource) => {
     mimeType.includes("mpegurl") ||
     mimeType.includes("x-mpegurl") ||
     getUrlPathname(source.url).endsWith(".m3u8")
-  );
-};
-
-const canPlayNativeHls = (video: HTMLVideoElement) => {
-  return Boolean(
-    video.canPlayType("application/vnd.apple.mpegurl") ||
-      video.canPlayType("application/x-mpegurl"),
   );
 };
 

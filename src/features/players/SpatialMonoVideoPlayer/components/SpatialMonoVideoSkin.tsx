@@ -117,7 +117,10 @@ export const SpatialMonoVideoSkin = ({
               aria-hidden="true"
             />
           : null}
-          <div className="media-buffering-indicator media-buffering-indicator--source-switch">
+          <div
+            className="media-buffering-indicator media-buffering-indicator--source-switch"
+            data-visible
+          >
             <SpinnerIcon className="media-icon" />
           </div>
         </div>

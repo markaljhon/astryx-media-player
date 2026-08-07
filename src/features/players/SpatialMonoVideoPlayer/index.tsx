@@ -92,6 +92,11 @@ export const SpatialMonoVideoPlayer = (props: {
     setIsSourceLoading(false);
   }, []);
 
+  const handleSourceError = useCallback(() => {
+    setIsSourceLoading(false);
+    setIsSourceReady(false);
+  }, []);
+
   return (
     <Player.Provider>
       <SpatialMonoVideoSkin
@@ -107,6 +112,7 @@ export const SpatialMonoVideoPlayer = (props: {
         <MonoVideoCanvas
           source={selectedPlaybackSource}
           onSourceReady={handleSourceReady}
+          onSourceError={handleSourceError}
         />
       </SpatialMonoVideoSkin>
     </Player.Provider>
