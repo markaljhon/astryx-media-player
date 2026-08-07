@@ -14,6 +14,8 @@ import { createHlsPlaybackConfig } from "../../api/hlsPlaybackConfig";
 
 type SpatialVideoMaterialProps = {
   source: MediaPlaybackSource;
+  initialMuted: boolean;
+  initialPlaybackRate: number;
   onSourceReady?: () => void;
   onSourceError?: () => void;
 };
@@ -23,6 +25,8 @@ export const SpatialVideoMaterial = (props: SpatialVideoMaterialProps) => {
     return (
       <Suspense fallback={<meshBasicMaterial color="black" wireframe />}>
         <HlsSpatialVideoMaterial
+          initialMuted={props.initialMuted}
+          initialPlaybackRate={props.initialPlaybackRate}
           source={props.source}
           onSourceReady={props.onSourceReady}
           onSourceError={props.onSourceError}
@@ -34,6 +38,8 @@ export const SpatialVideoMaterial = (props: SpatialVideoMaterialProps) => {
   return (
     <Suspense fallback={<meshBasicMaterial color="black" wireframe />}>
       <DirectSpatialVideoMaterial
+        initialMuted={props.initialMuted}
+        initialPlaybackRate={props.initialPlaybackRate}
         source={props.source}
         onSourceReady={props.onSourceReady}
         onSourceError={props.onSourceError}
@@ -43,6 +49,8 @@ export const SpatialVideoMaterial = (props: SpatialVideoMaterialProps) => {
 };
 
 const DirectSpatialVideoMaterial = ({
+  initialMuted,
+  initialPlaybackRate,
   onSourceError,
   onSourceReady,
   source,
@@ -50,7 +58,7 @@ const DirectSpatialVideoMaterial = ({
   const texture = useVideoTexture(source.url, {
     crossOrigin: "anonymous",
     loop: false,
-    muted: false,
+    muted: initialMuted,
     playsInline: true,
   });
   const setMedia = useMediaAttach();
@@ -63,6 +71,8 @@ const DirectSpatialVideoMaterial = ({
     };
 
     video.addEventListener("error", handleError);
+    video.muted = initialMuted;
+    video.playbackRate = initialPlaybackRate;
     setMedia?.(video);
 
     return () => {
@@ -73,18 +83,29 @@ const DirectSpatialVideoMaterial = ({
       );
       video.pause();
     };
-  }, [onSourceError, onSourceReady, setMedia, texture.image]);
+  }, [
+    initialMuted,
+    initialPlaybackRate,
+    onSourceError,
+    onSourceReady,
+    setMedia,
+    texture.image,
+  ]);
 
   return <SpatialTextureMaterial texture={texture} />;
 };
 
 const HlsSpatialVideoMaterial = ({
+  initialMuted,
+  initialPlaybackRate,
   onSourceError,
   onSourceReady,
   source,
 }: SpatialVideoMaterialProps) => {
   const texture = useSpatialHlsVideoTexture(
     source,
+    initialMuted,
+    initialPlaybackRate,
     onSourceReady,
     onSourceError,
   );
@@ -111,6 +132,8 @@ const SpatialTextureMaterial = ({
 
 const useSpatialHlsVideoTexture = (
   source: MediaPlaybackSource,
+  initialMuted: boolean,
+  initialPlaybackRate: number,
   onSourceReady: (() => void) | undefined,
   onSourceError: (() => void) | undefined,
 ) => {
@@ -128,7 +151,8 @@ const useSpatialHlsVideoTexture = (
     nextTexture.colorSpace = outputColorSpace;
     video.autoplay = true;
     video.loop = false;
-    video.muted = false;
+    video.muted = initialMuted;
+    video.playbackRate = initialPlaybackRate;
     video.playsInline = true;
     video.preload = "auto";
     media.autoplay = true;
@@ -136,7 +160,8 @@ const useSpatialHlsVideoTexture = (
       hlsJs: createHlsPlaybackConfig(url),
     };
     media.loop = false;
-    media.muted = false;
+    media.muted = initialMuted;
+    media.playbackRate = initialPlaybackRate;
     media.preload = "auto";
 
     const handleLoadedData = () => {
@@ -184,7 +209,15 @@ const useSpatialHlsVideoTexture = (
       video.removeAttribute("src");
       video.load();
     };
-  }, [onSourceError, onSourceReady, outputColorSpace, setMedia, url]);
+  }, [
+    initialMuted,
+    initialPlaybackRate,
+    onSourceError,
+    onSourceReady,
+    outputColorSpace,
+    setMedia,
+    url,
+  ]);
 
   return texture;
 };

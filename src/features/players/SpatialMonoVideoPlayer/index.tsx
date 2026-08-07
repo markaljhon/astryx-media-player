@@ -1,6 +1,6 @@
 import "@videojs/react/video/minimal-skin.css";
 import "./components/skin.css";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   bufferFeature,
   controlsFeature,
@@ -19,6 +19,12 @@ import {
 } from "./components/SpatialMonoVideoSkin";
 import type { MediaPlaybackSource } from "@/types/media";
 import { normalizePlaybackSources } from "../api/playbackSources";
+import {
+  getGlobalPlaybackPreferences,
+  getMediaPlaybackSourcePreference,
+  setMediaPlaybackSourcePreference,
+} from "../api/playerPreferences";
+import { PlayerPreferenceBridge } from "../components/PlayerPreferenceBridge";
 
 const Player = createPlayer({
   features: [
@@ -35,6 +41,7 @@ const Player = createPlayer({
 
 export const SpatialMonoVideoPlayer = (props: {
   src: string;
+  mediaPreferenceKey?: string;
   previewSrc?: string;
   playbackSources?: MediaPlaybackSource[];
   playbackRateControl?: PlaybackRateControlMode;
@@ -43,8 +50,11 @@ export const SpatialMonoVideoPlayer = (props: {
     () => normalizePlaybackSources(props.src, props.playbackSources),
     [props.playbackSources, props.src],
   );
-  const [selectedPlaybackSourceId, setSelectedPlaybackSourceId] = useState(
-    playbackSources[0]?.id ?? "default",
+  const preferenceScopeKey = props.mediaPreferenceKey ?? props.src;
+  const previousPreferenceScopeKeyRef = useRef(preferenceScopeKey);
+  const globalPlaybackPreferences = getGlobalPlaybackPreferences();
+  const [selectedPlaybackSourceId, setSelectedPlaybackSourceId] = useState(() =>
+    getPreferredPlaybackSourceId(playbackSources, props.mediaPreferenceKey),
   );
   const selectedPlaybackSource =
     playbackSources.find((source) => source.id === selectedPlaybackSourceId) ??
@@ -53,22 +63,31 @@ export const SpatialMonoVideoPlayer = (props: {
   const [isSourceReady, setIsSourceReady] = useState(false);
 
   useEffect(() => {
-    if (
-      playbackSources.some((source) => source.id === selectedPlaybackSourceId)
-    ) {
-      return;
-    }
+    const preferredSourceId = getPreferredPlaybackSourceId(
+      playbackSources,
+      props.mediaPreferenceKey,
+    );
+    const isSamePreferenceScope =
+      previousPreferenceScopeKeyRef.current === preferenceScopeKey;
 
-    setSelectedPlaybackSourceId(playbackSources[0]?.id ?? "default");
+    setSelectedPlaybackSourceId((currentSourceId) => {
+      if (preferredSourceId !== playbackSources[0]?.id) {
+        return preferredSourceId;
+      }
+
+      if (
+        isSamePreferenceScope &&
+        playbackSources.some((source) => source.id === currentSourceId)
+      ) {
+        return currentSourceId;
+      }
+
+      return preferredSourceId;
+    });
+    previousPreferenceScopeKeyRef.current = preferenceScopeKey;
     setIsSourceLoading(false);
     setIsSourceReady(false);
-  }, [playbackSources, selectedPlaybackSourceId]);
-
-  useEffect(() => {
-    setSelectedPlaybackSourceId(playbackSources[0]?.id ?? "default");
-    setIsSourceLoading(false);
-    setIsSourceReady(false);
-  }, [playbackSources, props.src]);
+  }, [playbackSources, preferenceScopeKey, props.mediaPreferenceKey]);
 
   useEffect(() => {
     setIsSourceReady(false);
@@ -83,8 +102,11 @@ export const SpatialMonoVideoPlayer = (props: {
       setIsSourceLoading(true);
       setIsSourceReady(false);
       setSelectedPlaybackSourceId(sourceId);
+      if (props.mediaPreferenceKey) {
+        setMediaPlaybackSourcePreference(props.mediaPreferenceKey, sourceId);
+      }
     },
-    [selectedPlaybackSourceId],
+    [props.mediaPreferenceKey, selectedPlaybackSourceId],
   );
 
   const handleSourceReady = useCallback(() => {
@@ -99,6 +121,7 @@ export const SpatialMonoVideoPlayer = (props: {
 
   return (
     <Player.Provider>
+      <PlayerPreferenceBridge />
       <SpatialMonoVideoSkin
         className="spatial-mono-video-player"
         poster={props.previewSrc}
@@ -110,11 +133,29 @@ export const SpatialMonoVideoPlayer = (props: {
         onPlaybackSourceChange={handlePlaybackSourceChange}
       >
         <MonoVideoCanvas
+          initialMuted={globalPlaybackPreferences.muted}
+          initialPlaybackRate={globalPlaybackPreferences.playbackRate}
           source={selectedPlaybackSource}
           onSourceReady={handleSourceReady}
           onSourceError={handleSourceError}
         />
       </SpatialMonoVideoSkin>
     </Player.Provider>
+  );
+};
+
+const getPreferredPlaybackSourceId = (
+  playbackSources: MediaPlaybackSource[],
+  mediaPreferenceKey: string | undefined,
+) => {
+  const storedSourceId =
+    mediaPreferenceKey ?
+      getMediaPlaybackSourcePreference(mediaPreferenceKey)
+    : undefined;
+
+  return (
+    playbackSources.find((source) => source.id === storedSourceId)?.id ??
+    playbackSources[0]?.id ??
+    "default"
   );
 };

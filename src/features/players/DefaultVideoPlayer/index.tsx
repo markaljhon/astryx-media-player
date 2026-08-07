@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
@@ -26,6 +27,12 @@ import {
   isHlsPlaybackSource,
   normalizePlaybackSources,
 } from "../api/playbackSources";
+import {
+  getGlobalPlaybackPreferences,
+  getMediaPlaybackSourcePreference,
+  setMediaPlaybackSourcePreference,
+} from "../api/playerPreferences";
+import { PlayerPreferenceBridge } from "../components/PlayerPreferenceBridge";
 
 const Player = createPlayer({
   features: [
@@ -42,6 +49,7 @@ const Player = createPlayer({
 
 export const DefaultVideoPlayer = (props: {
   src: string;
+  mediaPreferenceKey?: string;
   previewSrc?: string;
   playbackSources?: MediaPlaybackSource[];
   playbackRateControl?: PlaybackRateControlMode;
@@ -50,26 +58,40 @@ export const DefaultVideoPlayer = (props: {
     () => normalizePlaybackSources(props.src, props.playbackSources),
     [props.playbackSources, props.src],
   );
-  const [selectedPlaybackSourceId, setSelectedPlaybackSourceId] = useState(
-    playbackSources[0]?.id ?? "default",
+  const preferenceScopeKey = props.mediaPreferenceKey ?? props.src;
+  const previousPreferenceScopeKeyRef = useRef(preferenceScopeKey);
+  const globalPlaybackPreferences = getGlobalPlaybackPreferences();
+  const [selectedPlaybackSourceId, setSelectedPlaybackSourceId] = useState(() =>
+    getPreferredPlaybackSourceId(playbackSources, props.mediaPreferenceKey),
   );
   const selectedPlaybackSource =
     playbackSources.find((source) => source.id === selectedPlaybackSourceId) ??
     playbackSources[0];
 
   useEffect(() => {
-    if (
-      playbackSources.some((source) => source.id === selectedPlaybackSourceId)
-    ) {
-      return;
-    }
+    const preferredSourceId = getPreferredPlaybackSourceId(
+      playbackSources,
+      props.mediaPreferenceKey,
+    );
+    const isSamePreferenceScope =
+      previousPreferenceScopeKeyRef.current === preferenceScopeKey;
 
-    setSelectedPlaybackSourceId(playbackSources[0]?.id ?? "default");
-  }, [playbackSources, selectedPlaybackSourceId]);
+    setSelectedPlaybackSourceId((currentSourceId) => {
+      if (preferredSourceId !== playbackSources[0]?.id) {
+        return preferredSourceId;
+      }
 
-  useEffect(() => {
-    setSelectedPlaybackSourceId(playbackSources[0]?.id ?? "default");
-  }, [playbackSources, props.src]);
+      if (
+        isSamePreferenceScope &&
+        playbackSources.some((source) => source.id === currentSourceId)
+      ) {
+        return currentSourceId;
+      }
+
+      return preferredSourceId;
+    });
+    previousPreferenceScopeKeyRef.current = preferenceScopeKey;
+  }, [playbackSources, preferenceScopeKey, props.mediaPreferenceKey]);
 
   const handlePlaybackSourceChange = useCallback(
     (sourceId: string) => {
@@ -78,12 +100,16 @@ export const DefaultVideoPlayer = (props: {
       }
 
       setSelectedPlaybackSourceId(sourceId);
+      if (props.mediaPreferenceKey) {
+        setMediaPlaybackSourcePreference(props.mediaPreferenceKey, sourceId);
+      }
     },
-    [selectedPlaybackSourceId],
+    [props.mediaPreferenceKey, selectedPlaybackSourceId],
   );
 
   return (
     <Player.Provider>
+      <PlayerPreferenceBridge />
       <DefaultVideoSkin
         poster={props.previewSrc}
         playbackRateControl={props.playbackRateControl}
@@ -93,6 +119,8 @@ export const DefaultVideoPlayer = (props: {
       >
         <SourceVideo
           key={selectedPlaybackSource.url}
+          initialMuted={globalPlaybackPreferences.muted}
+          initialPlaybackRate={globalPlaybackPreferences.playbackRate}
           source={selectedPlaybackSource}
         />
       </DefaultVideoSkin>
@@ -100,10 +128,64 @@ export const DefaultVideoPlayer = (props: {
   );
 };
 
-const SourceVideo = ({ source }: { source: MediaPlaybackSource }) => {
+const SourceVideo = ({
+  initialMuted,
+  initialPlaybackRate,
+  source,
+}: {
+  initialMuted: boolean;
+  initialPlaybackRate: number;
+  source: MediaPlaybackSource;
+}) => {
+  const handleVideoRef = useCallback(
+    (video: HTMLVideoElement | null) => {
+      if (!video) {
+        return;
+      }
+
+      video.muted = initialMuted;
+      video.playbackRate = initialPlaybackRate;
+    },
+    [initialMuted, initialPlaybackRate],
+  );
+
   if (isHlsPlaybackSource(source)) {
-    return <HlsJsVideo src={source.url} autoPlay playsInline preload="auto" />;
+    return (
+      <HlsJsVideo
+        ref={handleVideoRef}
+        src={source.url}
+        autoPlay
+        muted={initialMuted}
+        playsInline
+        preload="auto"
+      />
+    );
   }
 
-  return <Video src={source.url} autoPlay playsInline preload="auto" />;
+  return (
+    <Video
+      ref={handleVideoRef}
+      src={source.url}
+      autoPlay
+      muted={initialMuted}
+      playsInline
+      preload="auto"
+    />
+  );
+};
+
+const getPreferredPlaybackSourceId = (
+  playbackSources: MediaPlaybackSource[],
+  mediaPreferenceKey: string | undefined,
+) => {
+  const storedSourceId =
+    mediaPreferenceKey ?
+      getMediaPlaybackSourcePreference(mediaPreferenceKey)
+    : undefined;
+
+  return (
+    playbackSources.find((source) => source.id === storedSourceId)?.id ??
+    playbackSources[0]?.id ??
+    "default"
+  );
 };

@@ -11,6 +11,8 @@ import type { MediaPlaybackSource } from "@/types/media";
 
 type MonoVideoCanvasProps = {
   source: MediaPlaybackSource;
+  initialMuted: boolean;
+  initialPlaybackRate: number;
   onSourceReady?: () => void;
   onSourceError?: () => void;
 };
@@ -45,6 +47,8 @@ export const MonoVideoCanvas = (props: MonoVideoCanvasProps) => {
       <MonoVideoScene>
         <SpatialVideoMaterial
           key={props.source.id}
+          initialMuted={props.initialMuted}
+          initialPlaybackRate={props.initialPlaybackRate}
           source={props.source}
           onSourceReady={props.onSourceReady}
           onSourceError={props.onSourceError}

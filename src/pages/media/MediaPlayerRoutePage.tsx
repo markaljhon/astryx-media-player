@@ -33,11 +33,13 @@ export const MediaPlayerRoutePage = () => {
   }
 
   const isSpatialVideo = hasSpatialVideoCue(item);
+  const mediaPreferenceKey = `${item.providerId}:${item.id}`;
 
   if (isSpatialVideo) {
     return (
       <SpatialMonoVideoPlayer
         src={sourceUrl}
+        mediaPreferenceKey={mediaPreferenceKey}
         previewSrc={item.thumbnailUrl}
         playbackSources={item.playbackSources}
       />
@@ -47,6 +49,7 @@ export const MediaPlayerRoutePage = () => {
   return (
     <DefaultVideoPlayer
       src={sourceUrl}
+      mediaPreferenceKey={mediaPreferenceKey}
       previewSrc={item.thumbnailUrl}
       playbackSources={item.playbackSources}
     />

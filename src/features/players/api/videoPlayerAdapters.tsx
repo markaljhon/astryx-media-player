@@ -41,6 +41,7 @@ const spatialMonoVideoPlayerAdapter = ({
   onOpenChange,
 }: VideoPlayerProps) => {
   const sourceUrl = item.sourceUrl ?? item.playbackSources?.[0]?.url;
+  const mediaPreferenceKey = getMediaPreferenceKey(item);
 
   if (!sourceUrl) {
     return null;
@@ -55,6 +56,7 @@ const spatialMonoVideoPlayerAdapter = ({
       {isOpen ?
         <SpatialMonoVideoPlayer
           src={sourceUrl}
+          mediaPreferenceKey={mediaPreferenceKey}
           previewSrc={item.thumbnailUrl}
           playbackSources={item.playbackSources}
         />
@@ -69,6 +71,7 @@ const defaultVideoPlayerAdapter = ({
   onOpenChange,
 }: VideoPlayerProps) => {
   const sourceUrl = item.sourceUrl ?? item.playbackSources?.[0]?.url;
+  const mediaPreferenceKey = getMediaPreferenceKey(item);
 
   if (!sourceUrl) {
     return null;
@@ -83,6 +86,7 @@ const defaultVideoPlayerAdapter = ({
       {isOpen ?
         <DefaultVideoPlayer
           src={sourceUrl}
+          mediaPreferenceKey={mediaPreferenceKey}
           previewSrc={item.thumbnailUrl}
           playbackSources={item.playbackSources}
         />
@@ -110,4 +114,8 @@ export const videoPlayerAdapters: VideoPlayerAdapter[] = [
 
 export const getVideoPlayerAdapter = (item: MediaItem) => {
   return videoPlayerAdapters.find((adapter) => adapter.canPlay(item));
+};
+
+const getMediaPreferenceKey = (item: MediaItem) => {
+  return `${item.providerId}:${item.id}`;
 };
