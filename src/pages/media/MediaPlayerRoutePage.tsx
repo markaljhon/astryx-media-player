@@ -15,7 +15,9 @@ export const MediaPlayerRoutePage = () => {
     return <Navigate to="/" replace />;
   }
 
-  if (!item.sourceUrl) {
+  const sourceUrl = item.sourceUrl ?? item.playbackSources?.[0]?.url;
+
+  if (!sourceUrl) {
     return (
       <Center height="100%">
         <VStack gap={1} hAlign="center">
@@ -30,7 +32,23 @@ export const MediaPlayerRoutePage = () => {
     );
   }
 
-  const Player = hasSpatialVideoCue(item) ? SpatialMonoVideoPlayer : DefaultVideoPlayer;
+  const isSpatialVideo = hasSpatialVideoCue(item);
 
-  return <Player src={item.sourceUrl} previewSrc={item.thumbnailUrl} />;
+  if (isSpatialVideo) {
+    return (
+      <SpatialMonoVideoPlayer
+        src={sourceUrl}
+        previewSrc={item.thumbnailUrl}
+        playbackSources={item.playbackSources}
+      />
+    );
+  }
+
+  return (
+    <DefaultVideoPlayer
+      src={sourceUrl}
+      previewSrc={item.thumbnailUrl}
+      playbackSources={item.playbackSources}
+    />
+  );
 };

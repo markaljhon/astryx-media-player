@@ -14,6 +14,7 @@ import {
 import { useAppShellMobile } from "@astryxdesign/core/AppShell";
 import {
   fetchAllMediaTags,
+  fetchMediaItem,
   fetchMediaList,
   type MediaItem,
   type MediaPage,
@@ -250,6 +251,25 @@ export const MediaLibraryPage = (props: { providerId: string }) => {
     }
   };
 
+  const handlePlay = (item: MediaItem) => {
+    setSelectedPlayerItem(item);
+
+    if (item.playbackSources?.some((source) => source.kind !== "direct")) {
+      return;
+    }
+
+    void fetchMediaItem({
+      id: item.id,
+      providerId: item.providerId,
+    })
+      .then((hydratedItem) => {
+        setSelectedPlayerItem((currentItem) =>
+          currentItem?.id === item.id ? hydratedItem : currentItem,
+        );
+      })
+      .catch(() => undefined);
+  };
+
   return (
     <Section variant="transparent" height="100%">
       <VStack gap={4} height="100%">
@@ -330,7 +350,7 @@ export const MediaLibraryPage = (props: { providerId: string }) => {
                     <MediaGalleryCard
                       key={item.id}
                       item={item}
-                      onPlay={setSelectedPlayerItem}
+                      onPlay={handlePlay}
                     />
                   ))}
                 </Grid>

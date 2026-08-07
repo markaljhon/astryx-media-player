@@ -48,7 +48,7 @@
 }
 
 .spatial-mono-video-player.media-minimal-skin
-  .media-controls:has(.media-menu--playback-rate[data-open]) {
+  .media-controls:has(.media-menu[data-open]) {
   filter: none;
   opacity: 1;
   pointer-events: auto;
@@ -56,7 +56,7 @@
 }
 
 .spatial-mono-video-player.media-minimal-skin
-  .media-controls:has(.media-menu--playback-rate[data-open])
+  .media-controls:has(.media-menu[data-open])
   ~ .media-overlay {
   backdrop-filter: none;
   background-image: none;
@@ -78,21 +78,38 @@
   display: grid;
 }
 
-.spatial-mono-video-player.media-minimal-skin .media-menu--playback-rate {
+.spatial-mono-video-player.media-minimal-skin .media-menu--playback-rate,
+.spatial-mono-video-player.media-minimal-skin .media-menu--playback-source {
   max-block-size: var(--media-popover-available-height, none);
   max-inline-size: var(--media-popover-available-width, max-content);
-  overflow: visible;
   width: max-content;
+}
+
+.spatial-mono-video-player.media-minimal-skin .media-menu--playback-rate {
+  overflow: visible;
+}
+
+.spatial-mono-video-player.media-minimal-skin .media-menu--playback-source {
+  max-block-size: min(var(--media-popover-available-height, 50vh), 50vh);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .spatial-mono-video-player.media-minimal-skin
   .media-menu--playback-rate
+  .media-menu__group,
+.spatial-mono-video-player.media-minimal-skin
+  .media-menu--playback-source
   .media-menu__group {
   flex-direction: column;
 }
 
 .spatial-mono-video-player.media-minimal-skin
   .media-menu--playback-rate
+  .media-menu__item,
+.spatial-mono-video-player.media-minimal-skin
+  .media-menu--playback-source
   .media-menu__item {
   inline-size: 100%;
 }
@@ -133,8 +150,42 @@
   transition: opacity 0.25s;
 }
 
+.spatial-mono-video-player.media-minimal-skin .media-source-switch {
+  background-color: var(--color-on-light);
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
+}
+
+.spatial-mono-video-player.media-minimal-skin .media-source-switch__poster {
+  clip-path: inset(0 50% 0 0);
+  display: block;
+  height: 100%;
+  inset: 0 auto 0 0;
+  max-width: none;
+  object-fit: fill;
+  object-position: left center;
+  position: absolute;
+  width: 200%;
+}
+
+.spatial-mono-video-player.media-minimal-skin
+  .media-buffering-indicator--source-switch {
+  display: grid;
+  inset: 0;
+  opacity: 1;
+  pointer-events: none;
+  position: absolute;
+}
+
 .spatial-mono-video-player.media-minimal-skin
   > .media-poster:not([data-visible]) {
+  opacity: 0;
+}
+
+.spatial-mono-video-player.media-minimal-skin.media-minimal-skin--source-ready
+  > .media-poster {
   opacity: 0;
 }
 

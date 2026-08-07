@@ -40,7 +40,9 @@ const spatialMonoVideoPlayerAdapter = ({
   isOpen,
   onOpenChange,
 }: VideoPlayerProps) => {
-  if (!item.sourceUrl) {
+  const sourceUrl = item.sourceUrl ?? item.playbackSources?.[0]?.url;
+
+  if (!sourceUrl) {
     return null;
   }
 
@@ -52,8 +54,9 @@ const spatialMonoVideoPlayerAdapter = ({
     >
       {isOpen ?
         <SpatialMonoVideoPlayer
-          src={item.sourceUrl}
+          src={sourceUrl}
           previewSrc={item.thumbnailUrl}
+          playbackSources={item.playbackSources}
         />
       : null}
     </VideoPlayerDialog>
@@ -65,7 +68,9 @@ const defaultVideoPlayerAdapter = ({
   isOpen,
   onOpenChange,
 }: VideoPlayerProps) => {
-  if (!item.sourceUrl) {
+  const sourceUrl = item.sourceUrl ?? item.playbackSources?.[0]?.url;
+
+  if (!sourceUrl) {
     return null;
   }
 
@@ -77,8 +82,9 @@ const defaultVideoPlayerAdapter = ({
     >
       {isOpen ?
         <DefaultVideoPlayer
-          src={item.sourceUrl}
+          src={sourceUrl}
           previewSrc={item.thumbnailUrl}
+          playbackSources={item.playbackSources}
         />
       : null}
     </VideoPlayerDialog>
@@ -88,12 +94,16 @@ const defaultVideoPlayerAdapter = ({
 export const videoPlayerAdapters: VideoPlayerAdapter[] = [
   {
     id: "spatial-mono-r3f",
-    canPlay: (item) => Boolean(item.sourceUrl) && hasSpatialVideoCue(item),
+    canPlay: (item) =>
+      (Boolean(item.sourceUrl) || Boolean(item.playbackSources?.length)) &&
+      hasSpatialVideoCue(item),
     Component: spatialMonoVideoPlayerAdapter,
   },
   {
     id: "flat-default",
-    canPlay: (item) => item.kind === "video" && Boolean(item.sourceUrl),
+    canPlay: (item) =>
+      item.kind === "video" &&
+      (Boolean(item.sourceUrl) || Boolean(item.playbackSources?.length)),
     Component: defaultVideoPlayerAdapter,
   },
 ];

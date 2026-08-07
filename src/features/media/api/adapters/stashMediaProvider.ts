@@ -5,6 +5,8 @@ import type {
 } from "@/types/api";
 import type {
   MediaItem,
+  MediaPlaybackSource,
+  MediaPlaybackSourceKind,
   MediaTag,
   MediaTagFilter,
   StereoVideoLayout,
@@ -18,7 +20,9 @@ import {
   findMediaSceneOperation,
   findMediaScenesOperation,
   findTagsOperation,
+  sceneStreamsOperation,
   type StashMediaScene,
+  type StashSceneStream,
   type StashTag,
 } from "./stash/operations";
 
@@ -42,6 +46,10 @@ const toDurationMs = (durationSeconds: number | null | undefined) => {
     : undefined;
 };
 
+const isNonEmptyString = (value: unknown): value is string => {
+  return typeof value === "string" && value.trim().length > 0;
+};
+
 const resolveStashUrl = (path: string | null, endpoint: string) => {
   if (!path) {
     return undefined;
@@ -63,6 +71,113 @@ const resolveStashUrl = (path: string | null, endpoint: string) => {
   }
 
   return resolvedUrl.toString();
+};
+
+const getUrlPathname = (url: string) => {
+  try {
+    return new URL(url, window.location.origin).pathname.toLowerCase();
+  } catch {
+    return url.toLowerCase();
+  }
+};
+
+const inferPlaybackSourceKind = (
+  url: string,
+  mimeType?: string,
+): MediaPlaybackSourceKind | null => {
+  const normalizedMimeType = mimeType?.toLowerCase() ?? "";
+  const pathname = getUrlPathname(url);
+
+  if (
+    normalizedMimeType.includes("mpegurl") ||
+    normalizedMimeType.includes("x-mpegurl") ||
+    pathname.endsWith(".m3u8")
+  ) {
+    return "hls";
+  }
+
+  if (normalizedMimeType.includes("mp4") || pathname.endsWith(".mp4")) {
+    return "mp4";
+  }
+
+  if (normalizedMimeType.includes("webm") || pathname.endsWith(".webm")) {
+    return "webm";
+  }
+
+  return null;
+};
+
+const getDefaultPlaybackSourceLabel = (
+  kind: MediaPlaybackSourceKind,
+  index: number,
+) => {
+  if (kind === "hls") return "HLS stream";
+  if (kind === "mp4") return "MP4 stream";
+  if (kind === "webm") return "WebM stream";
+  if (kind === "direct") return "Direct stream";
+
+  return `Stream ${index + 1}`;
+};
+
+const mapSceneStream = (
+  stream: StashSceneStream,
+  endpoint: string,
+  index: number,
+): MediaPlaybackSource | null => {
+  const url = resolveStashUrl(stream.url, endpoint);
+
+  if (!url) {
+    return null;
+  }
+
+  const mimeType = stream.mime_type?.trim() || undefined;
+  const kind = inferPlaybackSourceKind(url, mimeType);
+
+  if (!kind) {
+    return null;
+  }
+
+  return {
+    id: `stash-stream:${index}:${url}`,
+    label:
+      stream.label?.trim() ||
+      getDefaultPlaybackSourceLabel(kind, index),
+    url,
+    kind,
+    mimeType,
+  };
+};
+
+const createScenePlaybackSources = (
+  defaultSourceUrl: string | undefined,
+  sceneStreams: StashSceneStream[],
+  endpoint: string,
+) => {
+  const sources: MediaPlaybackSource[] = [];
+  const seenUrls = new Set<string>();
+
+  if (defaultSourceUrl) {
+    sources.push({
+      id: "stash-stream:default",
+      label: "Default stream",
+      url: defaultSourceUrl,
+      kind: "direct",
+    });
+    seenUrls.add(defaultSourceUrl);
+  }
+
+  sceneStreams.forEach((stream, index) => {
+    const source = mapSceneStream(stream, endpoint, index);
+
+    if (!source || seenUrls.has(source.url)) {
+      return;
+    }
+
+    sources.push(source);
+    seenUrls.add(source.url);
+  });
+
+  return sources;
 };
 
 const inferStereoLayout = (scene: StashMediaScene): StereoVideoLayout => {
@@ -118,8 +233,18 @@ const inferVideoProjection = (scene: StashMediaScene): VideoProjection => {
   return "flat";
 };
 
-const mapScene = (scene: StashMediaScene, endpoint: string): MediaItem => {
+const mapScene = (
+  scene: StashMediaScene,
+  endpoint: string,
+  sceneStreams: StashSceneStream[] = [],
+): MediaItem => {
   const primaryFile = scene.files[0];
+  const defaultSourceUrl = resolveStashUrl(scene.paths.stream, endpoint);
+  const playbackSources = createScenePlaybackSources(
+    defaultSourceUrl,
+    sceneStreams,
+    endpoint,
+  );
 
   return {
     id: scene.id,
@@ -130,7 +255,8 @@ const mapScene = (scene: StashMediaScene, endpoint: string): MediaItem => {
     description: scene.details ?? undefined,
     thumbnailUrl: resolveStashUrl(scene.paths.screenshot, endpoint),
     previewVideoUrl: resolveStashUrl(scene.paths.preview, endpoint),
-    sourceUrl: resolveStashUrl(scene.paths.stream, endpoint),
+    sourceUrl: playbackSources[0]?.url ?? defaultSourceUrl,
+    playbackSources: playbackSources.length > 0 ? playbackSources : undefined,
     videoProjection: inferVideoProjection(scene),
     stereoLayout: inferStereoLayout(scene),
     durationMs: toDurationMs(primaryFile?.duration),
@@ -344,7 +470,23 @@ const fetchScene = async (sceneId: string) => {
   });
   const scene = data?.findScene;
 
-  return scene ? mapScene(scene, endpoint) : null;
+  if (!scene) {
+    return null;
+  }
+
+  const sceneStreams = await fetchSceneStreams(scene.id).catch(() => []);
+
+  return mapScene(scene, endpoint, sceneStreams);
+};
+
+const fetchSceneStreams = async (sceneId: string) => {
+  const { data } = await executeStashGraphQl(sceneStreamsOperation, {
+    id: sceneId,
+  });
+
+  return (data?.sceneStreams ?? []).filter((stream) =>
+    isNonEmptyString(stream.url),
+  );
 };
 
 export const stashMediaProvider: MediaProviderAdapter = {

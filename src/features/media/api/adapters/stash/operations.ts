@@ -24,6 +24,12 @@ export type StashMediaScene = {
   tags: Array<{ name: string | null; id: string | null }>;
 };
 
+export type StashSceneStream = {
+  label: string | null;
+  mime_type: string | null;
+  url: string | null;
+};
+
 export type StashTaggableScene = {
   id: string;
   title: string | null;
@@ -59,6 +65,10 @@ export type StashFindMediaSceneData = {
   findScene?: StashMediaScene | null;
 };
 
+export type StashSceneStreamsData = {
+  sceneStreams?: StashSceneStream[] | null;
+};
+
 export type StashFindTaggableScenesData = {
   findScenes?: {
     count?: number;
@@ -89,6 +99,10 @@ export type StashFindMediaScenesVariables = {
 };
 
 export type StashFindMediaSceneVariables = {
+  id: string;
+};
+
+export type StashSceneStreamsVariables = {
   id: string;
 };
 
@@ -213,6 +227,22 @@ export const findMediaSceneOperation: StashGraphQlOperation<
           name
           id
         }
+      }
+    }
+  `,
+};
+
+export const sceneStreamsOperation: StashGraphQlOperation<
+  StashSceneStreamsData,
+  StashSceneStreamsVariables
+> = {
+  name: "SceneStreams",
+  document: `
+    query SceneStreams($id: ID!) {
+      sceneStreams(id: $id) {
+        label
+        mime_type
+        url
       }
     }
   `,

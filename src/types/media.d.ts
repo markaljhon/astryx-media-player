@@ -6,6 +6,20 @@ export type VideoProjection = "flat" | "vr180" | "vr360";
 
 export type StereoVideoLayout = "mono" | "side-by-side" | "top-bottom";
 
+export type MediaPlaybackSourceKind =
+  | "direct"
+  | "mp4"
+  | "hls"
+  | "webm";
+
+export type MediaPlaybackSource = {
+  id: string;
+  label: string;
+  url: string;
+  kind: MediaPlaybackSourceKind;
+  mimeType?: string;
+};
+
 export type MediaItem = {
   id: string;
   title: string;
@@ -16,6 +30,7 @@ export type MediaItem = {
   previewAudioUrl?: string;
   previewVideoUrl?: string;
   sourceUrl?: string;
+  playbackSources?: MediaPlaybackSource[];
   videoProjection?: VideoProjection;
   stereoLayout?: StereoVideoLayout;
   durationMs?: number;

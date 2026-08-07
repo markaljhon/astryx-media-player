@@ -7,9 +7,11 @@ import {
   DEFAULT_CAMERA_FOV,
 } from "./CameraGestureControls";
 import { SpatialVideoMaterial } from "./SpatialVideoMaterial";
+import type { MediaPlaybackSource } from "@/types/media";
 
 type MonoVideoCanvasProps = {
-  url: string;
+  source: MediaPlaybackSource;
+  onSourceReady?: () => void;
 };
 
 export const MonoVideoCanvas = (props: MonoVideoCanvasProps) => {
@@ -34,13 +36,17 @@ export const MonoVideoCanvas = (props: MonoVideoCanvasProps) => {
     >
       <CameraGestureControls
         heightGesturePointerRef={heightGesturePointerRef}
-        resetKey={props.url}
+        resetKey={props.source.url}
       />
       <CameraHeightDragGesture
         heightGesturePointerRef={heightGesturePointerRef}
       />
       <MonoVideoScene>
-        <SpatialVideoMaterial url={props.url} />
+        <SpatialVideoMaterial
+          key={props.source.id}
+          source={props.source}
+          onSourceReady={props.onSourceReady}
+        />
       </MonoVideoScene>
     </Canvas>
   );

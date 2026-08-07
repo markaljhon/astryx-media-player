@@ -12,6 +12,7 @@ import {
   ChevronIcon,
   PauseIcon,
   PlayIcon,
+  QualityIcon,
   RestartIcon,
   SeekIcon,
   SpinnerIcon,
@@ -45,6 +46,7 @@ import {
   VolumeSlider,
   type RenderProp,
 } from "@videojs/react";
+import type { MediaPlaybackSource } from "@/types/media";
 
 const SEEK_TIME = 10;
 const CENTER_STATUS_ACTIONS = ["togglePaused"] as const;
@@ -58,14 +60,24 @@ export interface SpatialMonoVideoSkinProps {
   poster?: string | RenderProp<Poster.State> | undefined;
   placeholder?: string;
   playbackRateControl?: PlaybackRateControlMode;
+  playbackSources?: MediaPlaybackSource[];
+  selectedPlaybackSourceId?: string;
+  isSourceLoading?: boolean;
+  isSourceReady?: boolean;
+  onPlaybackSourceChange?: (sourceId: string) => void;
 }
 
 export const SpatialMonoVideoSkin = ({
   children,
   className,
+  onPlaybackSourceChange,
   poster,
   placeholder,
   playbackRateControl = "cycle",
+  playbackSources,
+  selectedPlaybackSourceId,
+  isSourceLoading = false,
+  isSourceReady = false,
   style,
 }: SpatialMonoVideoSkinProps): ReactNode => {
   const containerStyle =
@@ -78,7 +90,7 @@ export const SpatialMonoVideoSkin = ({
 
   return (
     <Container
-      className={`media-minimal-skin media-minimal-skin--video ${className ?? ""}`}
+      className={`media-minimal-skin media-minimal-skin--video ${isSourceReady ? "media-minimal-skin--source-ready" : ""} ${className ?? ""}`}
       style={containerStyle}
     >
       {children}
@@ -89,6 +101,26 @@ export const SpatialMonoVideoSkin = ({
           src={isString(poster) ? poster : undefined}
           render={isRenderProp(poster) ? poster : undefined}
         />
+      : null}
+
+      {isSourceLoading ?
+        <div
+          className="media-source-switch"
+          aria-label="Loading playback source"
+          aria-live="polite"
+        >
+          {isString(poster) ?
+            <img
+              className="media-source-switch__poster"
+              alt=""
+              src={poster}
+              aria-hidden="true"
+            />
+          : null}
+          <div className="media-buffering-indicator media-buffering-indicator--source-switch">
+            <SpinnerIcon className="media-icon" />
+          </div>
+        </div>
       : null}
 
       <BufferingIndicator
@@ -214,6 +246,11 @@ export const SpatialMonoVideoSkin = ({
           <div className="media-button-group">
             <VolumePopover />
             <PlaybackRateControl mode={playbackRateControl} />
+            <PlaybackSourceControl
+              playbackSources={playbackSources}
+              selectedPlaybackSourceId={selectedPlaybackSourceId}
+              onPlaybackSourceChange={onPlaybackSourceChange}
+            />
           </div>
         </Tooltip.Provider>
       </Controls.Root>
@@ -383,6 +420,62 @@ const PlaybackRateControl = ({
               <span>{option.label}</span>
               <Menu.ItemIndicator
                 checked={option.value === playbackRate.value}
+                forceMount
+                className="media-menu__indicator"
+              >
+                <CheckIcon className="media-icon" />
+              </Menu.ItemIndicator>
+            </Menu.RadioItem>
+          ))}
+        </Menu.RadioGroup>
+      </Menu.Content>
+    </Menu.Root>
+  );
+};
+
+const PlaybackSourceControl = ({
+  playbackSources,
+  selectedPlaybackSourceId,
+  onPlaybackSourceChange,
+}: {
+  playbackSources: MediaPlaybackSource[] | undefined;
+  selectedPlaybackSourceId: string | undefined;
+  onPlaybackSourceChange: ((sourceId: string) => void) | undefined;
+}): ReactNode => {
+  if (!playbackSources || playbackSources.length < 2) {
+    return null;
+  }
+
+  const selectedSourceId = selectedPlaybackSourceId ?? playbackSources[0]?.id;
+  const button = (
+    <Button
+      className="media-button--playback-source"
+      aria-label="Playback source"
+      title="Playback source"
+    >
+      <QualityIcon className="media-icon" />
+    </Button>
+  );
+
+  return (
+    <Menu.Root side="top" align="end">
+      <Menu.Trigger render={button} />
+      <Menu.Content className="media-popover media-menu media-menu--playback-source">
+        <Menu.RadioGroup
+          className="media-menu__group"
+          value={selectedSourceId}
+          onValueChange={(sourceId) => onPlaybackSourceChange?.(sourceId)}
+          aria-label="Playback source"
+        >
+          {playbackSources.map((source) => (
+            <Menu.RadioItem
+              key={source.id}
+              className="media-menu__item"
+              value={source.id}
+            >
+              <span>{source.label}</span>
+              <Menu.ItemIndicator
+                checked={source.id === selectedSourceId}
                 forceMount
                 className="media-menu__indicator"
               >

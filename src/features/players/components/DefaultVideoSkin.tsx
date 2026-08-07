@@ -15,6 +15,7 @@ import {
   FullscreenEnterIcon,
   PauseIcon,
   PlayIcon,
+  QualityIcon,
   RestartIcon,
   SeekIcon,
   SpinnerIcon,
@@ -49,6 +50,7 @@ import {
   VolumeSlider,
   type RenderProp,
 } from "@videojs/react";
+import type { MediaPlaybackSource } from "@/types/media";
 import { PanGesture } from "./PanGesture";
 import {
   DEFAULT_VIDEO_FIT_REQUEST_EVENT,
@@ -67,14 +69,20 @@ export interface DefaultVideoSkinProps {
   poster?: string | RenderProp<Poster.State> | undefined;
   placeholder?: string;
   playbackRateControl?: PlaybackRateControlMode;
+  playbackSources?: MediaPlaybackSource[];
+  selectedPlaybackSourceId?: string;
+  onPlaybackSourceChange?: (sourceId: string) => void;
 }
 
 export const DefaultVideoSkin = ({
   children,
   className,
+  onPlaybackSourceChange,
   poster,
   placeholder,
   playbackRateControl = "cycle",
+  playbackSources,
+  selectedPlaybackSourceId,
   style,
 }: DefaultVideoSkinProps): ReactNode => {
   const containerStyle =
@@ -225,6 +233,11 @@ export const DefaultVideoSkin = ({
           <div className="media-button-group">
             <VolumePopover />
             <PlaybackRateControl mode={playbackRateControl} />
+            <PlaybackSourceControl
+              playbackSources={playbackSources}
+              selectedPlaybackSourceId={selectedPlaybackSourceId}
+              onPlaybackSourceChange={onPlaybackSourceChange}
+            />
             <FitVideoButton />
           </div>
         </Tooltip.Provider>
@@ -421,6 +434,62 @@ const PlaybackRateControl = ({
               <span>{option.label}</span>
               <Menu.ItemIndicator
                 checked={option.value === playbackRate.value}
+                forceMount
+                className="media-menu__indicator"
+              >
+                <CheckIcon className="media-icon" />
+              </Menu.ItemIndicator>
+            </Menu.RadioItem>
+          ))}
+        </Menu.RadioGroup>
+      </Menu.Content>
+    </Menu.Root>
+  );
+};
+
+const PlaybackSourceControl = ({
+  playbackSources,
+  selectedPlaybackSourceId,
+  onPlaybackSourceChange,
+}: {
+  playbackSources: MediaPlaybackSource[] | undefined;
+  selectedPlaybackSourceId: string | undefined;
+  onPlaybackSourceChange: ((sourceId: string) => void) | undefined;
+}): ReactNode => {
+  if (!playbackSources || playbackSources.length < 2) {
+    return null;
+  }
+
+  const selectedSourceId = selectedPlaybackSourceId ?? playbackSources[0]?.id;
+  const button = (
+    <Button
+      className="media-button--playback-source"
+      aria-label="Playback source"
+      title="Playback source"
+    >
+      <QualityIcon className="media-icon" />
+    </Button>
+  );
+
+  return (
+    <Menu.Root side="top" align="end">
+      <Menu.Trigger render={button} />
+      <Menu.Content className="media-popover media-menu media-menu--playback-source">
+        <Menu.RadioGroup
+          className="media-menu__group"
+          value={selectedSourceId}
+          onValueChange={(sourceId) => onPlaybackSourceChange?.(sourceId)}
+          aria-label="Playback source"
+        >
+          {playbackSources.map((source) => (
+            <Menu.RadioItem
+              key={source.id}
+              className="media-menu__item"
+              value={source.id}
+            >
+              <span>{source.label}</span>
+              <Menu.ItemIndicator
+                checked={source.id === selectedSourceId}
                 forceMount
                 className="media-menu__indicator"
               >
