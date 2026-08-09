@@ -10,6 +10,7 @@ import {
   isSupportedPlaybackRate,
   setGlobalPlaybackPreferences,
 } from "../api/playerPreferences";
+import { shouldPersistPlayerPreferenceChange } from "../api/playerPreferencePersistence";
 
 type MutablePlaybackPreferenceMedia = {
   muted: boolean;
@@ -20,6 +21,9 @@ export const PlayerPreferenceBridge = () => {
   const media = useMedia();
   const playbackRate = usePlayer(selectPlaybackRate);
   const volume = usePlayer(selectVolume);
+  const hasHydratedMediaRef = useRef(false);
+  const hydratedMutedValueRef = useRef<boolean | null>(null);
+  const hydratedPlaybackRateValueRef = useRef<number | null>(null);
   const skipNextMutedPersistRef = useRef(false);
   const skipNextPlaybackRatePersistRef = useRef(false);
 
@@ -32,6 +36,9 @@ export const PlayerPreferenceBridge = () => {
 
     skipNextMutedPersistRef.current = true;
     skipNextPlaybackRatePersistRef.current = true;
+    hydratedMutedValueRef.current = preferences.muted;
+    hydratedPlaybackRateValueRef.current = preferences.playbackRate;
+    hasHydratedMediaRef.current = true;
     media.muted = preferences.muted;
     media.playbackRate = preferences.playbackRate;
   }, [media]);
@@ -41,8 +48,18 @@ export const PlayerPreferenceBridge = () => {
       return;
     }
 
+    const shouldPersist = shouldPersistPlayerPreferenceChange({
+      hasHydratedMedia: hasHydratedMediaRef.current,
+      hydratedValue: hydratedMutedValueRef.current,
+      nextValue: volume.muted,
+      skipHydrationEcho: skipNextMutedPersistRef.current,
+    });
+
     if (skipNextMutedPersistRef.current) {
       skipNextMutedPersistRef.current = false;
+    }
+
+    if (!shouldPersist) {
       return;
     }
 
@@ -54,8 +71,18 @@ export const PlayerPreferenceBridge = () => {
       return;
     }
 
+    const shouldPersist = shouldPersistPlayerPreferenceChange({
+      hasHydratedMedia: hasHydratedMediaRef.current,
+      hydratedValue: hydratedPlaybackRateValueRef.current,
+      nextValue: playbackRate.playbackRate,
+      skipHydrationEcho: skipNextPlaybackRatePersistRef.current,
+    });
+
     if (skipNextPlaybackRatePersistRef.current) {
       skipNextPlaybackRatePersistRef.current = false;
+    }
+
+    if (!shouldPersist) {
       return;
     }
 
