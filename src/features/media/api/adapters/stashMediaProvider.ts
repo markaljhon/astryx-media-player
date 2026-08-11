@@ -25,6 +25,10 @@ import {
   type StashSceneStream,
   type StashTag,
 } from "./stash/operations";
+import {
+  createStashSceneSearchRequests,
+  type StashSceneSearchRequest,
+} from "./stash/searchFilters";
 
 const defaultPageSize = 10;
 const tagCatalogPageSize = 500;
@@ -421,28 +425,20 @@ const resolveTagIds = async (tags: MediaTagFilter[]) => {
   return Array.from(resolvedIds);
 };
 
-const createSceneFilter = async (tags: MediaTagFilter[] | undefined) => {
-  if (!tags?.length) {
-    return null;
-  }
+const createSceneSearchRequests = async (
+  query: string | undefined,
+  tags: MediaTagFilter[] | undefined,
+) => {
+  const tagIds = tags?.length ? await resolveTagIds(tags) : [];
 
-  const tagIds = await resolveTagIds(tags);
-
-  return {
-    tags: {
-      value: tagIds,
-      modifier: "INCLUDES_ALL",
-    },
-  };
+  return createStashSceneSearchRequests(query, tagIds);
 };
 
-const fetchScenes = async (
+const fetchScenePage = async (
   page: number,
   pageSize: number,
-  query?: string,
-  tags?: MediaTagFilter[],
+  request: StashSceneSearchRequest,
 ) => {
-  const sceneFilter = await createSceneFilter(tags);
   const { endpoint, data } = await executeStashGraphQl(
     findMediaScenesOperation,
     {
@@ -451,9 +447,9 @@ const fetchScenes = async (
         per_page: pageSize,
         sort: "created_at",
         direction: "DESC",
-        ...(query?.trim() ? { q: query.trim() } : {}),
+        ...(request.query ? { q: request.query } : {}),
       },
-      sceneFilter,
+      sceneFilter: request.sceneFilter,
     },
   );
 
@@ -461,6 +457,55 @@ const fetchScenes = async (
     endpoint,
     totalItems: data?.findScenes?.count ?? 0,
     scenes: data?.findScenes?.scenes ?? [],
+  };
+};
+
+const mergeUniqueScenes = (scenePages: StashMediaScene[][]) => {
+  const sceneById = new Map<string, StashMediaScene>();
+
+  scenePages.flat().forEach((scene) => {
+    if (!sceneById.has(scene.id)) {
+      sceneById.set(scene.id, scene);
+    }
+  });
+
+  return Array.from(sceneById.values());
+};
+
+const fetchScenes = async (
+  page: number,
+  pageSize: number,
+  query?: string,
+  tags?: MediaTagFilter[],
+) => {
+  const searchRequests = await createSceneSearchRequests(query, tags);
+
+  if (searchRequests.length === 1) {
+    return fetchScenePage(page, pageSize, searchRequests[0]);
+  }
+
+  const searchPageSize = page * pageSize;
+  const [sceneTextResult, performerResult, overlapResult] = await Promise.all([
+    fetchScenePage(1, searchPageSize, searchRequests[0]),
+    fetchScenePage(1, searchPageSize, searchRequests[1]),
+    fetchScenePage(1, 1, {
+      query: searchRequests[0].query,
+      sceneFilter: searchRequests[1].sceneFilter,
+    }),
+  ]);
+  const mergedScenes = mergeUniqueScenes([
+    sceneTextResult.scenes,
+    performerResult.scenes,
+  ]);
+  const startIndex = (page - 1) * pageSize;
+
+  return {
+    endpoint: sceneTextResult.endpoint,
+    totalItems:
+      sceneTextResult.totalItems +
+      performerResult.totalItems -
+      overlapResult.totalItems,
+    scenes: mergedScenes.slice(startIndex, startIndex + pageSize),
   };
 };
 

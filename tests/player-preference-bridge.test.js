@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { shouldPersistPlayerPreferenceChange } from "../features/players/api/playerPreferencePersistence";
+import { shouldPersistPlayerPreferenceChange } from "../src/features/players/api/playerPreferencePersistence.ts";
 
 describe("shouldPersistPlayerPreferenceChange", () => {
   test("does not persist default player state before media hydration", () => {
