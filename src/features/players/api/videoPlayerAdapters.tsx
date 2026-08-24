@@ -1,5 +1,9 @@
 import type { ComponentType } from "react";
 import type { MediaItem } from "@/types/media";
+import {
+  getSpatialPlayerStereoLayout,
+  type SpatialPlaybackMode,
+} from "./spatialPlaybackMode";
 import { DefaultVideoPlayer } from "../DefaultVideoPlayer";
 import { SpatialMonoVideoPlayer } from "../SpatialMonoVideoPlayer";
 import { VideoPlayerDialog } from "../components/VideoPlayerDialog";
@@ -8,6 +12,7 @@ export type VideoPlayerProps = {
   item: MediaItem;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  playbackMode?: SpatialPlaybackMode;
 };
 
 type VideoPlayerAdapter = {
@@ -39,6 +44,7 @@ const spatialMonoVideoPlayerAdapter = ({
   item,
   isOpen,
   onOpenChange,
+  playbackMode = "default",
 }: VideoPlayerProps) => {
   const sourceUrl = item.sourceUrl ?? item.playbackSources?.[0]?.url;
   const mediaPreferenceKey = getMediaPreferenceKey(item);
@@ -59,6 +65,7 @@ const spatialMonoVideoPlayerAdapter = ({
           mediaPreferenceKey={mediaPreferenceKey}
           previewSrc={item.thumbnailUrl}
           playbackSources={item.playbackSources}
+          stereoLayout={getSpatialPlayerStereoLayout(item, playbackMode)}
         />
       : null}
     </VideoPlayerDialog>

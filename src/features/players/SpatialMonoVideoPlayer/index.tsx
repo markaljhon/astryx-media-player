@@ -17,7 +17,7 @@ import {
   SpatialMonoVideoSkin,
   type PlaybackRateControlMode,
 } from "./components/SpatialMonoVideoSkin";
-import type { MediaPlaybackSource } from "@/types/media";
+import type { MediaPlaybackSource, StereoVideoLayout } from "@/types/media";
 import { normalizePlaybackSources } from "../api/playbackSources";
 import {
   getGlobalPlaybackPreferences,
@@ -45,6 +45,7 @@ export const SpatialMonoVideoPlayer = (props: {
   previewSrc?: string;
   playbackSources?: MediaPlaybackSource[];
   playbackRateControl?: PlaybackRateControlMode;
+  stereoLayout?: StereoVideoLayout;
 }) => {
   const playbackSources = useMemo(
     () => normalizePlaybackSources(props.src, props.playbackSources),
@@ -136,6 +137,7 @@ export const SpatialMonoVideoPlayer = (props: {
           initialMuted={globalPlaybackPreferences.muted}
           initialPlaybackRate={globalPlaybackPreferences.playbackRate}
           source={selectedPlaybackSource}
+          stereoLayout={props.stereoLayout}
           onSourceReady={handleSourceReady}
           onSourceError={handleSourceError}
         />

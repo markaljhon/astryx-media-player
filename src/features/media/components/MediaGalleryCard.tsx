@@ -24,10 +24,12 @@ import {
   getNativeVideoPlaybackUrl,
   launchNativeVideoFullscreen,
 } from "@/features/players/api/nativeVideoPlayback";
+import { canPlaySpatialSbs } from "@/features/players/api/spatialPlaybackMode";
 
 type MediaGalleryCardProps = {
   item: MediaItem;
   onPlay?: (item: MediaItem) => void;
+  onPlaySbs?: (item: MediaItem) => void;
 };
 
 const formatDuration = (durationMs?: number) => {
@@ -54,7 +56,11 @@ const getKindTokenColor = (kind: MediaItem["kind"]) => {
   }
 };
 
-export const MediaGalleryCard = ({ item, onPlay }: MediaGalleryCardProps) => {
+export const MediaGalleryCard = ({
+  item,
+  onPlay,
+  onPlaySbs,
+}: MediaGalleryCardProps) => {
   const previewRef = useRef<HTMLDivElement>(null);
   const previewAudioRef = useRef<HTMLAudioElement>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
@@ -68,10 +74,14 @@ export const MediaGalleryCard = ({ item, onPlay }: MediaGalleryCardProps) => {
   const showPreviewVideo = hasPreviewVideo && isPreviewActive;
   const showPreviewAudio =
     !showPreviewVideo && hasPreviewAudio && isPreviewActive;
-  const canPlay = item.kind === "video" && Boolean(item.sourceUrl) && onPlay;
+  const hasPlayerSource =
+    item.kind === "video"
+    && (Boolean(item.sourceUrl) || Boolean(item.playbackSources?.length));
+  const canPlay = hasPlayerSource && Boolean(onPlay);
+  const canPlaySbs = Boolean(onPlaySbs) && canPlaySpatialSbs(item);
   const nativePlaybackUrl = getNativeVideoPlaybackUrl(item);
   const canPlayNative = Boolean(nativePlaybackUrl);
-
+  console.log({ canPlay, canPlaySbs, canPlayNative, nativePlaybackUrl });
   useEffect(() => {
     if (!isPreviewActive) {
       return;
@@ -146,6 +156,10 @@ export const MediaGalleryCard = ({ item, onPlay }: MediaGalleryCardProps) => {
 
   const playItem = () => {
     onPlay?.(item);
+  };
+
+  const playSbsItem = () => {
+    onPlaySbs?.(item);
   };
 
   const playNativeItem = () => {
@@ -244,7 +258,7 @@ export const MediaGalleryCard = ({ item, onPlay }: MediaGalleryCardProps) => {
               ))}
             </HStack>
           : null}
-          {canPlay || canPlayNative ?
+          {canPlay || canPlaySbs || canPlayNative ?
             <HStack gap={1}>
               {canPlay ?
                 <Button
@@ -252,6 +266,14 @@ export const MediaGalleryCard = ({ item, onPlay }: MediaGalleryCardProps) => {
                   variant="secondary"
                   size="lg"
                   onClick={playItem}
+                />
+              : null}
+              {canPlaySbs ?
+                <Button
+                  label="Play SBS"
+                  variant="secondary"
+                  size="lg"
+                  onClick={playSbsItem}
                 />
               : null}
               {canPlayNative ?

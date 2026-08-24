@@ -7,10 +7,11 @@ import {
   DEFAULT_CAMERA_FOV,
 } from "./CameraGestureControls";
 import { SpatialVideoMaterial } from "./SpatialVideoMaterial";
-import type { MediaPlaybackSource } from "@/types/media";
+import type { MediaPlaybackSource, StereoVideoLayout } from "@/types/media";
 
 type MonoVideoCanvasProps = {
   source: MediaPlaybackSource;
+  stereoLayout?: StereoVideoLayout;
   initialMuted: boolean;
   initialPlaybackRate: number;
   onSourceReady?: () => void;
@@ -50,6 +51,7 @@ export const MonoVideoCanvas = (props: MonoVideoCanvasProps) => {
           initialMuted={props.initialMuted}
           initialPlaybackRate={props.initialPlaybackRate}
           source={props.source}
+          stereoLayout={props.stereoLayout}
           onSourceReady={props.onSourceReady}
           onSourceError={props.onSourceError}
         />

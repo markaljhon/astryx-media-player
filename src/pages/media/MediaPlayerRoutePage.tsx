@@ -2,6 +2,7 @@ import { Navigate, getRouteApi } from "@tanstack/react-router";
 import { Center, Text, VStack } from "@astryxdesign/core";
 import { useAccess } from "@/features/auth/access";
 import { DefaultVideoPlayer } from "@/features/players/DefaultVideoPlayer";
+import { getSpatialPlayerStereoLayout } from "@/features/players/api/spatialPlaybackMode";
 import { hasSpatialVideoCue } from "@/features/players/api/videoPlayerAdapters";
 import { SpatialMonoVideoPlayer } from "@/features/players/SpatialMonoVideoPlayer";
 
@@ -9,6 +10,7 @@ const routeApi = getRouteApi("/media_/player/$sceneId");
 
 export const MediaPlayerRoutePage = () => {
   const item = routeApi.useLoaderData();
+  const { playbackMode = "default" } = routeApi.useSearch();
   const { hasAccess } = useAccess();
 
   if (!hasAccess) {
@@ -42,6 +44,7 @@ export const MediaPlayerRoutePage = () => {
         mediaPreferenceKey={mediaPreferenceKey}
         previewSrc={item.thumbnailUrl}
         playbackSources={item.playbackSources}
+        stereoLayout={getSpatialPlayerStereoLayout(item, playbackMode)}
       />
     );
   }

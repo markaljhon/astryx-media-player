@@ -20,10 +20,15 @@ import {
   type MediaPage,
   type MediaTag,
 } from "@/features/media/api/mediaApi";
+import {
+  createMediaLibraryPlayerSelection,
+  type MediaLibraryPlayerSelection,
+} from "@/features/media/api/mediaLibraryPlayerSelection";
 import { MediaGalleryCard } from "@/features/media/components/MediaGalleryCard";
 import { MediaSearchBar } from "@/features/media/components/MediaSearchBar";
 import { MediaSkeletonGallery } from "@/features/media/components/MediaSkeletonGallery";
 import type { MediaLibrarySearch } from "@/features/media/routing/mediaSearch";
+import type { SpatialPlaybackMode } from "@/features/players/api/spatialPlaybackMode";
 import { VideoPlayerAdapter } from "@/features/players/components/VideoPlayerAdapter";
 
 type MediaTagToken = MediaTag & {
@@ -99,8 +104,8 @@ export const MediaLibraryPage = (props: { providerId: string }) => {
   const [items, setItems] = useState<MediaItem[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [tagCatalog, setTagCatalog] = useState<MediaTagToken[]>([]);
-  const [selectedPlayerItem, setSelectedPlayerItem] =
-    useState<MediaItem | null>(null);
+  const [selectedPlayer, setSelectedPlayer] =
+    useState<MediaLibraryPlayerSelection | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const search = useSearch({ from: "/media" });
@@ -247,12 +252,15 @@ export const MediaLibraryPage = (props: { providerId: string }) => {
 
   const handlePlayerOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
-      setSelectedPlayerItem(null);
+      setSelectedPlayer(null);
     }
   };
 
-  const handlePlay = (item: MediaItem) => {
-    setSelectedPlayerItem(item);
+  const handlePlay = (
+    item: MediaItem,
+    playbackMode: SpatialPlaybackMode = "default",
+  ) => {
+    setSelectedPlayer(createMediaLibraryPlayerSelection(item, playbackMode));
 
     if (item.playbackSources?.some((source) => source.kind !== "direct")) {
       return;
@@ -263,11 +271,20 @@ export const MediaLibraryPage = (props: { providerId: string }) => {
       providerId: item.providerId,
     })
       .then((hydratedItem) => {
-        setSelectedPlayerItem((currentItem) =>
-          currentItem?.id === item.id ? hydratedItem : currentItem,
+        setSelectedPlayer((currentPlayer) =>
+          currentPlayer?.item.id === item.id ?
+            createMediaLibraryPlayerSelection(
+              hydratedItem,
+              currentPlayer.playbackMode,
+            )
+          : currentPlayer,
         );
       })
       .catch(() => undefined);
+  };
+
+  const handlePlaySbs = (item: MediaItem) => {
+    handlePlay(item, "side-by-side");
   };
 
   return (
@@ -351,6 +368,7 @@ export const MediaLibraryPage = (props: { providerId: string }) => {
                       key={item.id}
                       item={item}
                       onPlay={handlePlay}
+                      onPlaySbs={handlePlaySbs}
                     />
                   ))}
                 </Grid>
@@ -370,7 +388,8 @@ export const MediaLibraryPage = (props: { providerId: string }) => {
         </Section>
       </VStack>
       <VideoPlayerAdapter
-        item={selectedPlayerItem}
+        item={selectedPlayer?.item ?? null}
+        playbackMode={selectedPlayer?.playbackMode}
         onOpenChange={handlePlayerOpenChange}
       />
     </Section>

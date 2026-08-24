@@ -3,14 +3,18 @@ import {
   fetchMediaItem,
   listMediaProviders,
 } from "@/features/media/api/mediaApi";
+import { validateMediaPlayerPlaybackMode } from "@/features/players/api/mediaPlayerRouteSearch";
+import type { SpatialPlaybackMode } from "@/features/players/api/spatialPlaybackMode";
 import { MediaPlayerRoutePage } from "@/pages/media/MediaPlayerRoutePage";
 import { createFileRoute, stripSearchParams } from "@tanstack/react-router";
 
 type MediaPlayerSearch = {
+  playbackMode?: SpatialPlaybackMode;
   providerId: string;
 };
 
 const mediaPlayerSearchDefaults = {
+  playbackMode: "default",
   providerId: defaultMediaProviderId,
 } satisfies MediaPlayerSearch;
 
@@ -29,7 +33,10 @@ const validateMediaPlayerSearch = (
       requestedProviderId
     : mediaPlayerSearchDefaults.providerId;
 
-  return { providerId };
+  return {
+    playbackMode: validateMediaPlayerPlaybackMode(search),
+    providerId,
+  };
 };
 
 export const Route = createFileRoute("/media_/player/$sceneId")({

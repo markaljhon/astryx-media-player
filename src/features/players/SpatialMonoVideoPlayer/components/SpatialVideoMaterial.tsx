@@ -1,19 +1,26 @@
 import { useVideoTexture } from "@react-three/drei";
-import { useThree } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { HlsJsMedia } from "@videojs/core/dom/media/hls-js";
 import { useMediaAttach } from "@videojs/react";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import {
   BackSide,
+  type Camera,
   ClampToEdgeWrapping,
+  PerspectiveCamera,
   VideoTexture,
   type VideoTexture as ThreeVideoTexture,
 } from "three";
-import type { MediaPlaybackSource } from "@/types/media";
+import type { MediaPlaybackSource, StereoVideoLayout } from "@/types/media";
 import { createHlsPlaybackConfig } from "../../api/hlsPlaybackConfig";
+import {
+  createSpatialTextureViews,
+  type SpatialTextureView,
+} from "./spatialTextureViews";
 
 type SpatialVideoMaterialProps = {
   source: MediaPlaybackSource;
+  stereoLayout?: StereoVideoLayout;
   initialMuted: boolean;
   initialPlaybackRate: number;
   onSourceReady?: () => void;
@@ -28,6 +35,7 @@ export const SpatialVideoMaterial = (props: SpatialVideoMaterialProps) => {
           initialMuted={props.initialMuted}
           initialPlaybackRate={props.initialPlaybackRate}
           source={props.source}
+          stereoLayout={props.stereoLayout}
           onSourceReady={props.onSourceReady}
           onSourceError={props.onSourceError}
         />
@@ -41,6 +49,7 @@ export const SpatialVideoMaterial = (props: SpatialVideoMaterialProps) => {
         initialMuted={props.initialMuted}
         initialPlaybackRate={props.initialPlaybackRate}
         source={props.source}
+        stereoLayout={props.stereoLayout}
         onSourceReady={props.onSourceReady}
         onSourceError={props.onSourceError}
       />
@@ -54,6 +63,7 @@ const DirectSpatialVideoMaterial = ({
   onSourceError,
   onSourceReady,
   source,
+  stereoLayout,
 }: SpatialVideoMaterialProps) => {
   const texture = useVideoTexture(source.url, {
     crossOrigin: "anonymous",
@@ -92,7 +102,9 @@ const DirectSpatialVideoMaterial = ({
     texture.image,
   ]);
 
-  return <SpatialTextureMaterial texture={texture} />;
+  return (
+    <SpatialTextureMaterial texture={texture} stereoLayout={stereoLayout} />
+  );
 };
 
 const HlsSpatialVideoMaterial = ({
@@ -101,6 +113,7 @@ const HlsSpatialVideoMaterial = ({
   onSourceError,
   onSourceReady,
   source,
+  stereoLayout,
 }: SpatialVideoMaterialProps) => {
   const texture = useSpatialHlsVideoTexture(
     source,
@@ -114,20 +127,100 @@ const HlsSpatialVideoMaterial = ({
     return <meshBasicMaterial color="black" wireframe />;
   }
 
-  return <SpatialTextureMaterial texture={texture} />;
+  return (
+    <SpatialTextureMaterial texture={texture} stereoLayout={stereoLayout} />
+  );
 };
 
 const SpatialTextureMaterial = ({
+  stereoLayout,
   texture,
 }: {
+  stereoLayout?: StereoVideoLayout;
   texture: ThreeVideoTexture;
 }) => {
+  const textureViews = useMemo(
+    () => createSpatialTextureViews(stereoLayout),
+    [stereoLayout],
+  );
+  const defaultTextureView = textureViews[0];
+
   texture.wrapS = ClampToEdgeWrapping;
   texture.wrapT = ClampToEdgeWrapping;
-  texture.repeat.set(-0.5, 1);
-  texture.offset.set(0.5, 0);
+  texture.repeat.set(defaultTextureView.repeatX, 1);
+  texture.offset.set(defaultTextureView.offsetX, 0);
 
-  return <meshBasicMaterial map={texture} side={BackSide} toneMapped={false} />;
+  return (
+    <>
+      <SpatialTextureViewportRenderer texture={texture} views={textureViews} />
+      <meshBasicMaterial
+        map={texture}
+        side={BackSide}
+        toneMapped={false}
+      />
+    </>
+  );
+};
+
+const SpatialTextureViewportRenderer = ({
+  texture,
+  views,
+}: {
+  texture: ThreeVideoTexture;
+  views: SpatialTextureView[];
+}) => {
+  const camera = useThree((state) => state.camera);
+  const gl = useThree((state) => state.gl);
+  const scene = useThree((state) => state.scene);
+  const size = useThree((state) => state.size);
+
+  useFrame(() => {
+    const originalCameraAspect =
+      camera instanceof PerspectiveCamera ? camera.aspect : null;
+
+    gl.setScissorTest(true);
+    gl.setViewport(0, 0, size.width, size.height);
+    gl.setScissor(0, 0, size.width, size.height);
+    gl.clear(true, true, true);
+
+    for (const view of views) {
+      const [viewportX, viewportY, viewportWidth, viewportHeight] =
+        view.viewport;
+      const x = Math.floor(viewportX * size.width);
+      const y = Math.floor(viewportY * size.height);
+      const width = Math.floor(viewportWidth * size.width);
+      const height = Math.floor(viewportHeight * size.height);
+
+      texture.repeat.set(view.repeatX, 1);
+      texture.offset.set(view.offsetX, 0);
+      gl.setViewport(x, y, width, height);
+      gl.setScissor(x, y, width, height);
+      setPerspectiveCameraAspect(camera, width / height);
+      gl.render(scene, camera);
+    }
+
+    if (originalCameraAspect !== null) {
+      setPerspectiveCameraAspect(camera, originalCameraAspect);
+    }
+
+    gl.setViewport(0, 0, size.width, size.height);
+    gl.setScissor(0, 0, size.width, size.height);
+    gl.setScissorTest(false);
+  }, 1);
+
+  return null;
+};
+
+const setPerspectiveCameraAspect = (
+  camera: Camera,
+  aspect: number,
+) => {
+  if (!(camera instanceof PerspectiveCamera) || !Number.isFinite(aspect)) {
+    return;
+  }
+
+  camera.aspect = aspect;
+  camera.updateProjectionMatrix();
 };
 
 const useSpatialHlsVideoTexture = (
