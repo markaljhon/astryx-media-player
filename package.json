@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
+    "deploy": "bun run build && bun run preview --host",
     "stash:tag-vr": "bun scripts/tag-stash-vr-scenes.ts"
   },
   "dependencies": {

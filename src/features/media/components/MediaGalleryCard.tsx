@@ -11,12 +11,19 @@ import {
   Center,
   Heading,
   HStack,
+  Icon,
+  IconButton,
   Section,
   Text,
   Token,
   VStack,
 } from "@astryxdesign/core";
+import { Maximize2 } from "lucide-react";
 import type { MediaItem } from "@/types/media";
+import {
+  getNativeVideoPlaybackUrl,
+  launchNativeVideoFullscreen,
+} from "@/features/players/api/nativeVideoPlayback";
 
 type MediaGalleryCardProps = {
   item: MediaItem;
@@ -62,6 +69,8 @@ export const MediaGalleryCard = ({ item, onPlay }: MediaGalleryCardProps) => {
   const showPreviewAudio =
     !showPreviewVideo && hasPreviewAudio && isPreviewActive;
   const canPlay = item.kind === "video" && Boolean(item.sourceUrl) && onPlay;
+  const nativePlaybackUrl = getNativeVideoPlaybackUrl(item);
+  const canPlayNative = Boolean(nativePlaybackUrl);
 
   useEffect(() => {
     if (!isPreviewActive) {
@@ -137,6 +146,14 @@ export const MediaGalleryCard = ({ item, onPlay }: MediaGalleryCardProps) => {
 
   const playItem = () => {
     onPlay?.(item);
+  };
+
+  const playNativeItem = () => {
+    if (!nativePlaybackUrl) {
+      return;
+    }
+
+    void launchNativeVideoFullscreen(nativePlaybackUrl).catch(() => undefined);
   };
 
   const previewContent =
@@ -227,14 +244,26 @@ export const MediaGalleryCard = ({ item, onPlay }: MediaGalleryCardProps) => {
               ))}
             </HStack>
           : null}
-          {canPlay ?
-            <HStack>
-              <Button
-                label="Play video"
-                variant="secondary"
-                size="lg"
-                onClick={playItem}
-              />
+          {canPlay || canPlayNative ?
+            <HStack gap={1}>
+              {canPlay ?
+                <Button
+                  label="Play video"
+                  variant="secondary"
+                  size="lg"
+                  onClick={playItem}
+                />
+              : null}
+              {canPlayNative ?
+                <IconButton
+                  label="Play with native fullscreen player"
+                  tooltip="Play with native fullscreen player"
+                  variant="secondary"
+                  size="lg"
+                  icon={<Icon icon={Maximize2} />}
+                  onClick={playNativeItem}
+                />
+              : null}
             </HStack>
           : null}
         </VStack>
